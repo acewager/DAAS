@@ -1,0 +1,110 @@
+# Local development environment.
+# Per 12_Deployment.md Section 10: this file bootstraps every platform
+# service. User desktop containers are NOT part of this file — they are
+# created dynamically by DockerManager starting in Sprint 3 (M4).
+
+networks:
+  dcp-network:
+    name: dcp-network
+
+volumes:
+  postgres-data:
+  redis-data:
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dcp}
+      POSTGRES_USER: ${POSTGRES_USER:-dcp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dcp}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dcp}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dcp-network
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dcp-network
+
+  backend:
+    build:
+      context: ./backend
+      args:
+        REQUIREMENTS_FILE: requirements/development.txt
+    env_file: .env
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - dcp-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.localhost`)"
+      - "traefik.http.services.backend.loadbalancer.server.port=8000"
+
+  celery:
+    build:
+      context: ./backend
+      args:
+        REQUIREMENTS_FILE: requirements/development.txt
+    command: celery -A config worker -l info
+    env_file: .env
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - dcp-network
+
+  frontend:
+    build:
+      context: ./frontend
+    env_file: .env
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - dcp-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`app.localhost`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=5173"
+
+  traefik:
+    image: traefik:v3.0
+    command:
+      - "--configFile=/etc/traefik/traefik.yml"
+    ports:
+      - "80:80"
+      - "8080:8080" # Traefik dashboard (dev only)
+    volumes:
+      - ./docker/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - dcp-network

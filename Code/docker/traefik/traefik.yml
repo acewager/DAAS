@@ -1,0 +1,19 @@
+# Static Traefik configuration for local development.
+# Per 05_Container_Architecture.md Section 9 and 12_Deployment.md Section 11:
+# Traefik discovers services via Docker labels — no manual routing config
+# is needed per-service beyond the labels in docker-compose.yml.
+api:
+  dashboard: true
+  insecure: true # dev only — never enable in production (see ADR-005)
+
+entryPoints:
+  web:
+    address: ":80"
+
+providers:
+  docker:
+    exposedByDefault: false
+    network: dcp-network
+
+log:
+  level: INFO

@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Design tokens per 19_UI_Design_System.md Section 4 (Color System).
+  Expressed as RGB channel triples so Tailwind's <alpha-value> works,
+  and as CSS variables so dark mode (Section 22) is a class toggle away.
+*/
+:root {
+  --color-primary: 37 99 235;   /* blue-600 */
+  --color-success: 22 163 74;   /* green-600 */
+  --color-warning: 217 119 6;   /* amber-600 */
+  --color-danger: 220 38 38;    /* red-600 */
+  --color-surface: 255 255 255;
+  --color-border: 226 232 240;  /* slate-200 */
+}
+
+.dark {
+  --color-surface: 15 23 42;    /* slate-900 */
+  --color-border: 51 65 85;     /* slate-700 */
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased;
+}
