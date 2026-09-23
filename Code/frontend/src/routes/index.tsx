@@ -6,6 +6,8 @@ import UserLayout from "@/layouts/UserLayout";
 import DashboardPage from "@/pages/DashboardPage";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
+import ProfilePage from "@/pages/ProfilePage";
+import PasswordResetPage from "@/pages/PasswordResetPage";
 
 /**
  * Route table per 08_Frontend_Architecture.md Section 6.
@@ -19,6 +21,8 @@ export default function AppRoutes() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/reset-password" element={<PasswordResetPage />} />
+        <Route path="/reset-password/confirm" element={<PasswordResetPage />} />
         <Route
           element={
             <ProtectedRoute>
@@ -27,6 +31,7 @@ export default function AppRoutes() {
           }
         >
           <Route path="/" element={<DashboardPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
       </Routes>
     </AuthProvider>

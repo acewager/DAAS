@@ -38,3 +38,21 @@ export async function loginAccount(payload: Required<Pick<AuthPayload, "username
 export async function logoutAccount() {
   await apiClient.post("/auth/logout/", {});
 }
+
+export async function updateProfile(payload: Pick<User, "username" | "email">) {
+  const response = await apiClient.patch<ApiSuccessResponse<AuthResponseData>>("/auth/me/", payload);
+  return response.data.data.user;
+}
+
+export async function requestPasswordReset(email: string) {
+  await apiClient.post("/auth/password-reset/", { email });
+}
+
+export async function confirmPasswordReset(payload: { uid: string; token: string; password: string; confirmPassword: string }) {
+  await apiClient.post("/auth/password-reset/confirm/", {
+    uid: payload.uid,
+    token: payload.token,
+    password: payload.password,
+    confirm_password: payload.confirmPassword,
+  });
+}

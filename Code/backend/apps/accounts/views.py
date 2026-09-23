@@ -3,13 +3,14 @@ from django.contrib.auth import login, logout
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from services.authentication import AuthenticationService
 
-from .throttles import LoginRateThrottle, RegisterRateThrottle
-from .serializers import LoginSerializer, RegisterSerializer, UserSerializer
+from .throttles import LoginRateThrottle, PasswordResetRateThrottle, RegisterRateThrottle
+from .serializers import LoginSerializer, PasswordResetConfirmSerializer, PasswordResetRequestSerializer, ProfileSerializer, RegisterSerializer, UserSerializer
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -102,3 +103,35 @@ class MeView(APIView):
                 "data": {"user": UserSerializer(request.user).data},
             }
         )
+
+    def patch(self, request):
+        serializer = ProfileSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response({"success": True, "message": "Profile updated successfully.", "data": {"user": UserSerializer(user).data}})
+
+
+class PasswordResetRequestView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [PasswordResetRateThrottle]
+
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        AuthenticationService.request_password_reset(serializer.validated_data["email"])
+        return Response({"success": True, "message": "If that email is registered, a reset link has been sent.", "data": {}})
+
+
+class PasswordResetConfirmView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        if not AuthenticationService.reset_password(
+            uid=serializer.validated_data["uid"],
+            token=serializer.validated_data["token"],
+            password=serializer.validated_data["password"],
+        ):
+            raise ValidationError({"token": "This reset link is invalid or has expired."})
+        return Response({"success": True, "message": "Password reset successfully.", "data": {}})

@@ -1,5 +1,10 @@
 """Authentication service layer for register/login/logout flows."""
 from django.contrib.auth import authenticate
+from django.contrib.auth.tokens import default_token_generator
+from django.conf import settings
+from django.core.mail import send_mail
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
 from apps.accounts.models import User
 from apps.events.models import EventType
@@ -54,3 +59,27 @@ class AuthenticationService:
             message="User logged out.",
             metadata={"username": getattr(user, "username", None)},
         )
+
+    @staticmethod
+    def request_password_reset(email: str) -> None:
+        user = User.objects.filter(email__iexact=email, is_active=True).first()
+        if not user:
+            return
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        reset_url = f"{settings.FRONTEND_URL.rstrip('/')}/reset-password/confirm?uid={uid}&token={token}"
+        send_mail("Reset your Desktop Cloud Platform password", f"Use this link to reset your password: {reset_url}", settings.DEFAULT_FROM_EMAIL, [user.email])
+        record_event(actor=user, event_type=EventType.PASSWORD_RESET_REQUESTED, message="Password reset requested.")
+
+    @staticmethod
+    def reset_password(*, uid: str, token: str, password: str) -> bool:
+        try:
+            user = User.objects.get(pk=force_str(urlsafe_base64_decode(uid)))
+        except (User.DoesNotExist, ValueError, TypeError, OverflowError):
+            return False
+        if not default_token_generator.check_token(user, token):
+            return False
+        user.set_password(password)
+        user.save(update_fields=["password"])
+        record_event(actor=user, event_type=EventType.PASSWORD_RESET_COMPLETED, message="Password reset completed.")
+        return True

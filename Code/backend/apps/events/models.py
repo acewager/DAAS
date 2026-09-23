@@ -10,6 +10,8 @@ class EventType(models.TextChoices):
 	USER_LOGGED_IN = "USER_LOGGED_IN", "User Logged In"
 	USER_LOGGED_OUT = "USER_LOGGED_OUT", "User Logged Out"
 	USER_LOGIN_FAILED = "USER_LOGIN_FAILED", "User Login Failed"
+	PASSWORD_RESET_REQUESTED = "PASSWORD_RESET_REQUESTED", "Password Reset Requested"
+	PASSWORD_RESET_COMPLETED = "PASSWORD_RESET_COMPLETED", "Password Reset Completed"
 
 
 class EventLog(TimeStampedModel):

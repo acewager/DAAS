@@ -63,6 +63,9 @@ export default function LoginPage() {
         <p className="mt-4 text-sm text-slate-500">
           Need an account? <Link to="/register" className="font-medium text-blue-600">Register</Link>
         </p>
+        <p className="mt-2 text-sm text-slate-500">
+          <Link to="/reset-password" className="font-medium text-blue-600">Forgot your password?</Link>
+        </p>
       </div>
     </div>
   );
