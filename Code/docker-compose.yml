@@ -97,7 +97,8 @@ services:
       - "traefik.http.services.frontend.loadbalancer.server.port=5173"
 
   traefik:
-    image: traefik:v3.0
+    # v3.7 supports Docker API v1.40+, required by current Docker Engines.
+    image: traefik:v3.7
     command:
       - "--configFile=/etc/traefik/traefik.yml"
     ports:

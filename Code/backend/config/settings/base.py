@@ -140,6 +140,7 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
+        "anon": os.environ.get("ANON_RATE_LIMIT", "100/hour"),
         "login": os.environ.get("AUTH_LOGIN_RATE_LIMIT", "10/hour"),
         "register": os.environ.get("AUTH_REGISTER_RATE_LIMIT", "5/hour"),
     },

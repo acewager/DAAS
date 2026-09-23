@@ -80,6 +80,7 @@ def test_login_rejects_invalid_password():
             "rest_framework.throttling.AnonRateThrottle",
         ],
         "DEFAULT_THROTTLE_RATES": {
+            "anon": "100/min",
             "login": "2/min",
             "register": "2/min",
         },
@@ -135,6 +136,7 @@ def test_login_rate_limit_enforced():
             "rest_framework.throttling.AnonRateThrottle",
         ],
         "DEFAULT_THROTTLE_RATES": {
+            "anon": "100/min",
             "login": "2/min",
             "register": "2/min",
         },
