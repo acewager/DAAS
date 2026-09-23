@@ -7,7 +7,7 @@ noVNC. See the full specification in the project documentation
 
 ## Status
 
-**Milestone M2 — Authentication, in progress** (Sprint 1,
+**Milestone M2 — Authentication complete** (Sprint 1,
 `17_Project_Task_Backlog.md`).
 
 Project foundation (VS-001 through VS-008) and authentication hardening
@@ -34,9 +34,9 @@ implemented:
 | VS-016 | React Registration page              | Done |
 | VS-017 | Authentication tests                 | Done |
 
-The authentication baseline in VS-009 through VS-017 is implemented.
-Before Sprint 2 can begin, M2 still needs the PRD-required password-reset
-and user-profile-management vertical slices, plus runtime verification. See
+Authentication includes registration, session login/logout, role checks,
+profile management, password reset, throttling, audit events, and regression
+coverage. See
 [`Code/docs/MILESTONE_READINESS_AUDIT.md`](Code/docs/MILESTONE_READINESS_AUDIT.md).
 
 ## Stack
@@ -121,6 +121,5 @@ Section 5.
 
 ## Next Up
 
-**Complete M2 first:** password reset, profile management, and runtime
-verification. Sprint 2 — Templates (VS-018 onward) follows only after that
-gate closes.
+**Sprint 2 — Templates** (`17_Project_Task_Backlog.md`, VS-018 onward):
+template model, admin CRUD, template API, and selection UI.

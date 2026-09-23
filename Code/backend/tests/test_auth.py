@@ -1,5 +1,6 @@
 """Authentication flow tests for Sprint 1."""
 import pytest
+from django.core import mail
 from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
 from django.test import override_settings
@@ -9,6 +10,7 @@ from rest_framework.test import APIClient
 
 from apps.accounts.models import User, UserRole
 from apps.accounts.permissions import IsAdminRole, IsSuperAdminRole
+from apps.events.models import EventLog, EventType
 
 
 @pytest.mark.django_db
@@ -205,3 +207,50 @@ def test_role_permissions_for_admin_and_super_admin():
     user.role = UserRole.SUPER_ADMIN
     assert IsAdminRole().has_permission(request, view=None) is True
     assert IsSuperAdminRole().has_permission(request, view=None) is True
+
+
+@pytest.mark.django_db
+def test_profile_update_requires_authentication_and_updates_only_current_user():
+    client = APIClient()
+    assert client.patch(reverse("auth-me"), {"email": "nobody@example.com"}, format="json").status_code == 403
+
+    user = User.objects.create_user("profile-user", "profile@example.com", "SecurePass123!")
+    client.force_authenticate(user)
+    response = client.patch(
+        reverse("auth-me"),
+        {"username": "renamed-user", "email": "renamed@example.com"},
+        format="json",
+    )
+    assert response.status_code == 200
+    user.refresh_from_db()
+    assert (user.username, user.email) == ("renamed-user", "renamed@example.com")
+
+
+@pytest.mark.django_db
+def test_registration_rejects_password_without_required_complexity():
+    response = APIClient().post(
+        reverse("auth-register"),
+        {"username": "weak-password", "email": "weak@example.com", "password": "lowercase123", "confirm_password": "lowercase123"},
+        format="json",
+    )
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend", FRONTEND_URL="http://app.localhost")
+def test_password_reset_is_emailed_logged_and_single_use():
+    user = User.objects.create_user("reset-user", "reset@example.com", "SecurePass123!")
+    client = APIClient()
+    response = client.post(reverse("auth-password-reset"), {"email": user.email}, format="json")
+    assert response.status_code == 200
+    assert len(mail.outbox) == 1
+    reset_url = mail.outbox[0].body.rsplit(" ", 1)[-1]
+    uid = reset_url.split("uid=", 1)[1].split("&", 1)[0]
+    token = reset_url.split("token=", 1)[1]
+
+    payload = {"uid": uid, "token": token, "password": "NewSecurePass123!", "confirm_password": "NewSecurePass123!"}
+    assert client.post(reverse("auth-password-reset-confirm"), payload, format="json").status_code == 200
+    assert client.post(reverse("auth-password-reset-confirm"), payload, format="json").status_code == 400
+    assert client.post(reverse("auth-login"), {"username": user.username, "password": "NewSecurePass123!"}, format="json").status_code == 200
+    assert EventLog.objects.filter(actor=user, event_type=EventType.PASSWORD_RESET_REQUESTED).exists()
+    assert EventLog.objects.filter(actor=user, event_type=EventType.PASSWORD_RESET_COMPLETED).exists()
