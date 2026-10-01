@@ -82,12 +82,14 @@ Each task uses one of:
 
 # Sprint 0 – Foundation
 
+Status: Done
+
 ## VS-001
 Initialize repository
 
 Priority: P0
 
-Status: Not Started
+Status: Done
 
 Deliverables:
 
@@ -101,6 +103,8 @@ Deliverables:
 
 Initialize Django
 
+Status: Done
+
 Deliverables:
 
 - Django project
@@ -113,6 +117,8 @@ Deliverables:
 
 Configure PostgreSQL
 
+Status: Done
+
 Deliverables:
 
 - Database connection
@@ -124,6 +130,8 @@ Deliverables:
 
 Configure Redis
 
+Status: Done
+
 Deliverables:
 
 - Redis connection
@@ -133,6 +141,8 @@ Deliverables:
 ## VS-005
 
 Configure Celery
+
+Status: Done
 
 Deliverables:
 
@@ -144,6 +154,8 @@ Deliverables:
 ## VS-006
 
 Configure React + TypeScript
+
+Status: Done
 
 Deliverables:
 
@@ -158,6 +170,8 @@ Deliverables:
 
 Configure Traefik
 
+Status: Done
+
 Deliverables:
 
 - HTTPS
@@ -169,6 +183,8 @@ Deliverables:
 
 DockerManager skeleton
 
+Status: Done
+
 Deliverables:
 
 - Service class
@@ -178,9 +194,13 @@ Deliverables:
 
 # Sprint 1 – Authentication
 
+Status: Done
+
 ## VS-009
 
 Custom User model
+
+Status: Done
 
 ---
 
@@ -188,11 +208,15 @@ Custom User model
 
 Registration API
 
+Status: Done
+
 ---
 
 ## VS-011
 
 Login API
+
+Status: Done
 
 ---
 
@@ -200,11 +224,15 @@ Login API
 
 Logout API
 
+Status: Done
+
 ---
 
 ## VS-013
 
 Session middleware
+
+Status: Done
 
 ---
 
@@ -212,11 +240,15 @@ Session middleware
 
 Protected routes
 
+Status: Done
+
 ---
 
 ## VS-015
 
 React Login Page
+
+Status: Done
 
 ---
 
@@ -224,19 +256,27 @@ React Login Page
 
 Registration Page
 
+Status: Done
+
 ---
 
 ## VS-017
 
 Authentication tests
 
+Status: Done
+
 ---
 
 # Sprint 2 – Templates
 
+Status: Done
+
 ## VS-018
 
 Template model
+
+Status: Done
 
 ---
 
@@ -244,11 +284,15 @@ Template model
 
 Admin CRUD
 
+Status: Done
+
 ---
 
 ## VS-020
 
 Template API
+
+Status: Done
 
 ---
 
@@ -256,13 +300,19 @@ Template API
 
 Template selection UI
 
+Status: Done
+
 ---
 
 # Sprint 3 – Instance Provisioning
 
+Status: In Progress
+
 ## VS-022
 
 Instance model
+
+Status: Done
 
 ---
 
@@ -270,11 +320,15 @@ Instance model
 
 Create Instance API
 
+Status: Done
+
 ---
 
 ## VS-024
 
 Docker create container
+
+Status: Testing
 
 ---
 
@@ -282,11 +336,15 @@ Docker create container
 
 Assign resources
 
+Status: Done
+
 ---
 
 ## VS-026
 
 Assign subdomain
+
+Status: Not Started
 
 ---
 
@@ -294,11 +352,15 @@ Assign subdomain
 
 Attach persistent volume
 
+Status: Done
+
 ---
 
 ## VS-028
 
 Event logging
+
+Status: Done
 
 ---
 
@@ -306,9 +368,13 @@ Event logging
 
 Provisioning progress UI
 
+Status: Done
+
 ---
 
 # Sprint 4 – Dashboard
+
+Status: Not Started
 
 ## VS-030
 
@@ -341,6 +407,8 @@ Launch Desktop button
 ---
 
 # Sprint 5 – Container Operations
+
+Status: Not Started
 
 ## VS-035
 
@@ -380,6 +448,8 @@ Error handling
 
 # Sprint 6 – Persistence
 
+Status: Not Started
+
 ## VS-041
 
 Persistent volume manager
@@ -399,6 +469,8 @@ Retain/Delete data option
 ---
 
 # Sprint 7 – Software Requests
+
+Status: Not Started
 
 ## VS-044
 
@@ -432,6 +504,8 @@ Status tracking
 
 # Sprint 8 – Administration
 
+Status: Not Started
+
 ## VS-049
 
 Admin dashboard
@@ -464,6 +538,8 @@ Analytics dashboard
 
 # Sprint 9 – Analytics
 
+Status: Not Started
+
 ## VS-054
 
 Usage collection
@@ -489,6 +565,8 @@ Health page
 ---
 
 # Sprint 10 – Production Readiness
+
+Status: Not Started
 
 ## VS-058
 

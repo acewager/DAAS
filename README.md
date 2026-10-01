@@ -7,12 +7,13 @@ noVNC. See the full specification in the project documentation
 
 ## Status
 
-**Milestone M2 — Authentication complete** (Sprint 1,
-`17_Project_Task_Backlog.md`).
+**Milestone M3 — Template Management complete; M4 — Instance Provisioning in
+progress** (`01D_Development_Roadmap.md`, `17_Project_Task_Backlog.md`).
 
-Project foundation (VS-001 through VS-008) and authentication hardening
-work (VS-009 through VS-017 baseline + rate-limiting/role checks) are
-implemented:
+Project foundation (VS-001 through VS-008), authentication (VS-009 through
+VS-017 baseline + rate-limiting/role checks), and the template management
+slice (VS-018 through VS-021) are implemented. Instance provisioning
+(VS-022 onward) is in progress:
 
 | Slice  | Deliverable                        | Status |
 |--------|-------------------------------------|--------|
@@ -33,10 +34,20 @@ implemented:
 | VS-015 | React Login page                     | Done |
 | VS-016 | React Registration page              | Done |
 | VS-017 | Authentication tests                 | Done |
+| VS-018 | Template model                       | Done |
+| VS-019 | Template admin CRUD                  | Done |
+| VS-020 | Template API                         | Done |
+| VS-021 | Template selection UI                | Done |
+| VS-022 | Instance model                       | Done |
+| VS-023 | Create Instance API                  | Done |
+| VS-024 | Docker create container              | Done |
+| VS-029 | Provisioning progress UI             | Done |
 
 Authentication includes registration, session login/logout, role checks,
 profile management, password reset, throttling, audit events, and regression
-coverage. See
+coverage. Template management includes the JSON-validated template model,
+admin-only CRUD, a development seed command, a template browsing page,
+event logging, and regression coverage. See
 [`Code/docs/MILESTONE_READINESS_AUDIT.md`](Code/docs/MILESTONE_READINESS_AUDIT.md).
 
 ## Stack
@@ -85,6 +96,12 @@ Create an admin user:
 docker compose exec backend python manage.py createsuperuser
 ```
 
+Create the three sample development templates:
+
+```bash
+docker compose exec backend python manage.py seed_templates
+```
+
 Confirm the Celery worker is alive:
 
 ```bash
@@ -121,5 +138,7 @@ Section 5.
 
 ## Next Up
 
-**Sprint 2 — Templates** (`17_Project_Task_Backlog.md`, VS-018 onward):
-template model, admin CRUD, template API, and selection UI.
+**Close Sprint 3** (`17_Project_Task_Backlog.md`, VS-026): subdomain
+assignment for provisioned instances, then commit the Sprint 3 slice.
+Next milestone after that is M5 — Instance Dashboard (Sprint 4, VS-030
+onward).
