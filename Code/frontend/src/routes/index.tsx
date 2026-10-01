@@ -9,6 +9,8 @@ import RegisterPage from "@/pages/RegisterPage";
 import ProfilePage from "@/pages/ProfilePage";
 import PasswordResetPage from "@/pages/PasswordResetPage";
 import TemplatesPage from "@/pages/TemplatesPage";
+import NewInstancePage from "@/pages/NewInstancePage";
+import InstancesPage from "@/pages/InstancesPage";
 
 /**
  * Route table per 08_Frontend_Architecture.md Section 6.
@@ -34,6 +36,8 @@ export default function AppRoutes() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/templates" element={<TemplatesPage />} />
+          <Route path="/instances" element={<InstancesPage />} />
+          <Route path="/instances/new" element={<NewInstancePage />} />
         </Route>
       </Routes>
     </AuthProvider>

@@ -12,4 +12,5 @@ urlpatterns = [
     path("health/", HealthCheckView.as_view(), name="health-check"),
     path("auth/", include("apps.accounts.urls")),
     path("templates/", include("apps.templates.urls")),
+    path("instances/", include("apps.instances.urls")),
 ]

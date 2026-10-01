@@ -15,6 +15,9 @@ class EventType(models.TextChoices):
 	TEMPLATE_CREATED = "TEMPLATE_CREATED", "Template Created"
 	TEMPLATE_UPDATED = "TEMPLATE_UPDATED", "Template Updated"
 	TEMPLATE_ARCHIVED = "TEMPLATE_ARCHIVED", "Template Archived"
+	INSTANCE_REQUESTED = "INSTANCE_REQUESTED", "Instance Requested"
+	INSTANCE_PROVISIONED = "INSTANCE_PROVISIONED", "Instance Provisioned"
+	INSTANCE_PROVISION_FAILED = "INSTANCE_PROVISION_FAILED", "Instance Provision Failed"
 
 
 class EventLog(TimeStampedModel):

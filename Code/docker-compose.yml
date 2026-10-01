@@ -51,6 +51,9 @@ services:
     env_file: .env
     volumes:
       - ./backend:/app
+      # DockerManager provisions user desktop containers from this service
+      # (M4) — read-only socket access for container create/start.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -62,6 +65,9 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`api.localhost`)"
       - "traefik.http.services.backend.loadbalancer.server.port=8000"
+      - "traefik.http.routers.backend-app.rule=Host(`app.localhost`) && PathPrefix(`/api/`)"
+      - "traefik.http.routers.backend-app.priority=100"
+      - "traefik.http.routers.backend-app.service=backend"
 
   celery:
     build:
@@ -72,6 +78,9 @@ services:
     env_file: .env
     volumes:
       - ./backend:/app
+      # Long-running provisioning tasks execute here (M4) — read-only
+      # socket access for container create/start.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     depends_on:
       postgres:
         condition: service_healthy

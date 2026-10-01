@@ -48,7 +48,14 @@ class DockerManager:
     # -- Container lifecycle (implemented in M4 — Instance Provisioning) ----
 
     def create_container(self, *, instance, template):
-        raise NotImplementedError("Implemented alongside VS-024 (Sprint 3).")
+        try:
+            config = template.json_configuration
+            volumes = {f"dcp-data-{instance.id}": {"bind": "/home/user", "mode": "rw"}} if instance.persistent else None
+            container = self.client.containers.create(config["image"], name=instance.container_name, hostname=f"inst-{str(instance.id)[:8]}", detach=True, mem_limit=instance.memory_limit, nano_cpus=int(float(instance.cpu_limit) * 1_000_000_000), volumes=volumes, network="dcp-network")
+            container.start()
+            return container
+        except Exception as exc:
+            raise DockerManagerError(str(exc)) from exc
 
     def start_container(self, *, instance):
         raise NotImplementedError("Implemented alongside VS-035 (Sprint 5).")

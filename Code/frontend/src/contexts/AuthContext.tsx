@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-import { fetchCurrentUser, logoutAccount } from "@/services/authService";
+import { fetchCurrentUser, logoutAccount, requestCsrfCookie } from "@/services/authService";
 
 import type { User } from "@/types/auth";
 
@@ -32,6 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    void requestCsrfCookie();
     void refreshUser();
   }, []);
 

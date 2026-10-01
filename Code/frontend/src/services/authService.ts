@@ -20,6 +20,14 @@ export async function fetchCurrentUser() {
   return response.data.data.user;
 }
 
+/**
+ * Seeds the csrftoken cookie so the apiClient interceptor can send it as
+ * X-CSRFToken on unsafe methods (session authentication enforces CSRF).
+ */
+export async function requestCsrfCookie() {
+  await apiClient.get("/auth/csrf/");
+}
+
 export async function registerAccount(payload: Required<Pick<AuthPayload, "username" | "email" | "password" | "confirmPassword">>) {
   const response = await apiClient.post<ApiSuccessResponse<AuthResponseData>>("/auth/register/", {
     username: payload.username,

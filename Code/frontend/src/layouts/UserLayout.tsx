@@ -20,6 +20,8 @@ export default function UserLayout() {
             <Link to="/" className="text-slate-600 hover:text-slate-900 dark:text-slate-300">Dashboard</Link>
             <Link to="/profile" className="text-slate-600 hover:text-slate-900 dark:text-slate-300">Profile</Link>
             <Link to="/templates" className="text-slate-600 hover:text-slate-900 dark:text-slate-300">Templates</Link>
+            <Link to="/instances" className="text-slate-600 hover:text-slate-900 dark:text-slate-300">Instances</Link>
+            <Link to="/instances/new" className="text-slate-600 hover:text-slate-900 dark:text-slate-300">New instance</Link>
             {user ? (
               <button className="rounded-lg border border-border px-3 py-1.5" onClick={() => void signOut()} type="button">
                 Logout
