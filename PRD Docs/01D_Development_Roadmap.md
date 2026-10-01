@@ -103,7 +103,7 @@ The MVP is divided into the following milestones.
 | M1 | Project Foundation | Done |
 | M2 | Authentication | Done |
 | M3 | Template Management | Done |
-| M4 | Instance Provisioning | In Progress |
+| M4 | Instance Provisioning | Done |
 | M5 | Instance Dashboard | Planned |
 | M6 | Browser Desktop Access | Planned |
 | M7 | Software Request Workflow | Planned |

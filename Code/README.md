@@ -7,13 +7,13 @@ noVNC. See the full specification in the project documentation
 
 ## Status
 
-**Milestone M3 — Template Management complete; M4 — Instance Provisioning in
-progress** (`01D_Development_Roadmap.md`, `17_Project_Task_Backlog.md`).
+**Milestone M4 — Instance Provisioning complete** (`01D_Development_Roadmap.md`,
+`17_Project_Task_Backlog.md`).
 
 Project foundation (VS-001 through VS-008), authentication (VS-009 through
-VS-017 baseline + rate-limiting/role checks), and the template management
-slice (VS-018 through VS-021) are implemented. Instance provisioning
-(VS-022 onward) is in progress:
+VS-017 baseline + rate-limiting/role checks), template management
+(VS-018 through VS-021), and instance provisioning (VS-022 through VS-029)
+are implemented:
 
 | Slice  | Deliverable                        | Status |
 |--------|-------------------------------------|--------|
@@ -41,13 +41,18 @@ slice (VS-018 through VS-021) are implemented. Instance provisioning
 | VS-022 | Instance model                       | Done |
 | VS-023 | Create Instance API                  | Done |
 | VS-024 | Docker create container              | Done |
+| VS-026 | Subdomain assignment                 | Done |
 | VS-029 | Provisioning progress UI             | Done |
 
 Authentication includes registration, session login/logout, role checks,
 profile management, password reset, throttling, audit events, and regression
 coverage. Template management includes the JSON-validated template model,
 admin-only CRUD, a development seed command, a template browsing page,
-event logging, and regression coverage. See
+event logging, and regression coverage. Instance provisioning includes the
+instance order API, Celery-driven Docker provisioning with resource limits
+and persistent storage, hash-based subdomains routed by Traefik (VS-026),
+provisioning events, the ordering form and progress UI, and regression
+coverage. See
 [`docs/MILESTONE_READINESS_AUDIT.md`](docs/MILESTONE_READINESS_AUDIT.md).
 
 ## Stack
@@ -138,7 +143,6 @@ Section 5.
 
 ## Next Up
 
-**Close Sprint 3** (`17_Project_Task_Backlog.md`, VS-026): subdomain
-assignment for provisioned instances, then commit the Sprint 3 slice.
-Next milestone after that is M5 — Instance Dashboard (Sprint 4, VS-030
-onward).
+**Sprint 4 — Dashboard** (`17_Project_Task_Backlog.md`, VS-030 onward):
+dashboard API, running instances page, instance cards, usage analytics
+widget, and the Launch Desktop button.

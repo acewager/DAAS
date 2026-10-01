@@ -306,7 +306,7 @@ Status: Done
 
 # Sprint 3 – Instance Provisioning
 
-Status: In Progress
+Status: Done
 
 ## VS-022
 
@@ -344,7 +344,7 @@ Status: Done
 
 Assign subdomain
 
-Status: Not Started
+Status: Done
 
 ---
 
