@@ -5,6 +5,7 @@ export interface Instance {
   name: string;
   template_name: string;
   status: string;
+  subdomain?: string;
   cpu_limit: string;
   memory_limit: string;
   persistent?: boolean;

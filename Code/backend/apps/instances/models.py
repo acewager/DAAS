@@ -36,3 +36,11 @@ class DesktopInstance(TimeStampedModel):
         if not self.container_name:
             self.container_name = f"dcp-{str(self.id)[:8]}"
         super().save(*args, **kwargs)
+
+    @property
+    def subdomain(self) -> str:
+        """Public host for this instance (ADR-011, 05_Container_Architecture.md
+        Section 8): a short hash derived from the access hash plus the platform
+        domain. The hash reduces predictability; Traefik routes it to the
+        container."""
+        return f"{self.access_hash[:7]}.{settings.TRAEFIK_DOMAIN}"

@@ -1,6 +1,6 @@
 import pytest
 from django.urls import reverse
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
@@ -35,3 +35,33 @@ def test_instance_order_rejects_disabled_or_missing_template():
     client = APIClient(); client.force_authenticate(user)
     response = client.post(reverse("instance-list"), {"name": "No", "template_id": str(template.id), "cpu_limit": "2", "memory_limit": "2G"}, format="json")
     assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_instance_subdomain_is_hash_based(settings):
+    user = User.objects.create_user("owner", "owner@example.com", "SecurePass123!")
+    template = DesktopTemplate.objects.create(name="Minimal", slug="minimal", json_configuration={"image": "desktop:minimal"})
+    instance = DesktopInstance.objects.create(user=user, template=template, name="My desktop", cpu_limit="1", memory_limit="1G")
+    assert instance.subdomain == f"{instance.access_hash[:7]}.{settings.TRAEFIK_DOMAIN}"
+    assert instance.subdomain.endswith(".localhost")
+
+
+@pytest.mark.django_db
+def test_container_creation_assigns_subdomain_labels():
+    from docker_manager.manager import DockerManager
+
+    user = User.objects.create_user("owner", "owner@example.com", "SecurePass123!")
+    template = DesktopTemplate.objects.create(name="Minimal", slug="minimal", json_configuration={"image": "desktop:minimal"})
+    instance = DesktopInstance.objects.create(user=user, template=template, name="My desktop", cpu_limit="2", memory_limit="2G", persistent=True)
+
+    manager = DockerManager()
+    manager._client = MagicMock()
+    manager.create_container(instance=instance, template=template)
+
+    _, kwargs = manager._client.containers.create.call_args
+    router = f"desktop-{instance.id}"
+    labels = kwargs["labels"]
+    assert labels["traefik.enable"] == "true"
+    assert labels[f"traefik.http.routers.{router}.rule"] == f"Host(`{instance.subdomain}`)"
+    assert labels[f"traefik.http.services.{router}.loadbalancer.server.port"] == "3000"
+    assert kwargs["volumes"]  # persistent volume attached for persistent instances

@@ -9,11 +9,12 @@ from .models import DesktopInstance
 
 class InstanceSerializer(serializers.ModelSerializer):
     template_name = serializers.CharField(source="template.name", read_only=True)
+    subdomain = serializers.CharField(read_only=True)
 
     class Meta:
         model = DesktopInstance
-        fields = ("id", "name", "template", "template_name", "status", "cpu_limit", "memory_limit", "persistent", "auto_stop_minutes", "error_message", "created_at")
-        read_only_fields = ("id", "status", "error_message", "created_at")
+        fields = ("id", "name", "template", "template_name", "status", "subdomain", "cpu_limit", "memory_limit", "persistent", "auto_stop_minutes", "error_message", "created_at")
+        read_only_fields = ("id", "status", "subdomain", "error_message", "created_at")
 
 
 class InstanceOrderSerializer(serializers.Serializer):
