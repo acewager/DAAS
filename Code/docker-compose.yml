@@ -74,7 +74,7 @@ services:
       context: ./backend
       args:
         REQUIREMENTS_FILE: requirements/development.txt
-    command: celery -A config worker -l info
+    command: celery -A config worker -l info --beat
     env_file: .env
     volumes:
       - ./backend:/app

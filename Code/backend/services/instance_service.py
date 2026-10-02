@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404
 from api.exceptions import Conflict
 from apps.instances.models import DesktopInstance, InstanceStatus
 from apps.events.models import EventType
+from docker_manager.manager import docker_manager
 from services.event_log_service import record_event
 
 
@@ -19,13 +20,87 @@ class InstanceService:
         return instance
 
     @staticmethod
+    def _get_instance(*, user=None, instance_id):
+        if user is None:
+            return get_object_or_404(DesktopInstance, pk=instance_id)
+        return get_object_or_404(DesktopInstance, pk=instance_id, user=user)
+
+    @staticmethod
     def launch(*, user, instance_id) -> str:
         """Return the desktop launch URL for a running, user-owned instance
         (VS-034). Session validation before routing arrives in M6 (Browser
         Desktop Access); HTTPS hardening is M10."""
-        instance = get_object_or_404(DesktopInstance.objects.select_related("template"), pk=instance_id, user=user)
+        instance = InstanceService._get_instance(user=user, instance_id=instance_id)
         if instance.status != InstanceStatus.RUNNING:
             raise Conflict("Instance is not running.")
         record_event(actor=user, event_type=EventType.INSTANCE_LAUNCHED, message="Desktop launch URL generated.", metadata={"instance_id": str(instance.id)})
         scheme = "http" if settings.DEBUG else "https"
         return f"{scheme}://{instance.subdomain}"
+
+    # -- Container operations (VS-035 through VS-038, Sprint 5) -----------
+    # Start/stop/restart are quick Docker calls and run synchronously; the
+    # Docker rules (01D_Development_Roadmap.md Section 8) reserve Celery for
+    # long-running operations such as provisioning and deletion.
+
+    @staticmethod
+    def start(*, instance_id, actor=None):
+        instance = InstanceService._get_instance(user=actor, instance_id=instance_id)
+        if instance.status != InstanceStatus.STOPPED:
+            raise Conflict("Only stopped instances can be started.")
+        try:
+            docker_manager.start_container(instance=instance)
+        except Exception as exc:
+            instance.status = InstanceStatus.FAILED
+            instance.error_message = str(exc)
+            instance.save(update_fields=["status", "error_message", "updated_at"])
+            record_event(actor=actor, event_type=EventType.INSTANCE_START_FAILED, message="Instance start failed.", metadata={"instance_id": str(instance.id)})
+            raise Conflict("Instance could not be started.") from exc
+        instance.status = InstanceStatus.RUNNING
+        instance.error_message = ""
+        instance.save(update_fields=["status", "error_message", "updated_at"])
+        record_event(actor=actor, event_type=EventType.INSTANCE_STARTED, message="Instance started.", metadata={"instance_id": str(instance.id)})
+        return instance
+
+    @staticmethod
+    def stop(*, instance_id, actor=None):
+        instance = InstanceService._get_instance(user=actor, instance_id=instance_id)
+        if instance.status != InstanceStatus.RUNNING:
+            raise Conflict("Only running instances can be stopped.")
+        try:
+            docker_manager.stop_container(instance=instance)
+        except Exception as exc:
+            record_event(actor=actor, event_type=EventType.INSTANCE_STOP_FAILED, message="Instance stop failed.", metadata={"instance_id": str(instance.id)})
+            raise Conflict("Instance could not be stopped.") from exc
+        instance.status = InstanceStatus.STOPPED
+        instance.save(update_fields=["status", "updated_at"])
+        record_event(actor=actor, event_type=EventType.INSTANCE_STOPPED, message="Instance stopped.", metadata={"instance_id": str(instance.id)})
+        return instance
+
+    @staticmethod
+    def restart(*, instance_id, actor=None):
+        instance = InstanceService._get_instance(user=actor, instance_id=instance_id)
+        if instance.status != InstanceStatus.RUNNING:
+            raise Conflict("Only running instances can be restarted.")
+        try:
+            docker_manager.restart_container(instance=instance)
+        except Exception as exc:
+            record_event(actor=actor, event_type=EventType.INSTANCE_RESTART_FAILED, message="Instance restart failed.", metadata={"instance_id": str(instance.id)})
+            raise Conflict("Instance could not be restarted.") from exc
+        instance.status = InstanceStatus.RUNNING
+        instance.save(update_fields=["status", "updated_at"])
+        record_event(actor=actor, event_type=EventType.INSTANCE_RESTARTED, message="Instance restarted.", metadata={"instance_id": str(instance.id)})
+        return instance
+
+    @staticmethod
+    def delete(*, instance_id, actor=None):
+        """Queue asynchronous deletion of a user-owned instance (VS-038).
+        The persistent volume is retained by default (Sprint 6, VS-043)."""
+        instance = InstanceService._get_instance(user=actor, instance_id=instance_id)
+        if instance.status not in (InstanceStatus.RUNNING, InstanceStatus.STOPPED, InstanceStatus.FAILED):
+            raise Conflict("Instance cannot be deleted in its current state.")
+        instance.status = InstanceStatus.DELETING
+        instance.save(update_fields=["status", "updated_at"])
+        record_event(actor=actor, event_type=EventType.INSTANCE_DELETE_REQUESTED, message="Instance deletion requested.", metadata={"instance_id": str(instance.id)})
+        from tasks.lifecycle import delete_instance
+        delete_instance.delay(str(instance.id))
+        return instance

@@ -16,6 +16,8 @@ class InstanceStatus(models.TextChoices):
     PROVISIONING = "PROVISIONING", "Provisioning"
     RUNNING = "RUNNING", "Running"
     STOPPED = "STOPPED", "Stopped"
+    DELETING = "DELETING", "Deleting"
+    DELETED = "DELETED", "Deleted"
     FAILED = "FAILED", "Failed"
 
 

@@ -44,3 +44,20 @@ export async function launchInstance(id: string) {
   const response = await apiClient.get<{ data: { url: string } }>(`/instances/${id}/launch/`);
   return response.data.data.url;
 }
+
+/** Container operations (Sprint 5, VS-035 through VS-038). */
+export async function startInstance(id: string) {
+  await apiClient.post(`/instances/${id}/start/`);
+}
+
+export async function stopInstance(id: string) {
+  await apiClient.post(`/instances/${id}/stop/`);
+}
+
+export async function restartInstance(id: string) {
+  await apiClient.post(`/instances/${id}/restart/`);
+}
+
+export async function deleteInstance(id: string) {
+  await apiClient.delete(`/instances/${id}/`);
+}

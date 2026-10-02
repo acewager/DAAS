@@ -69,16 +69,37 @@ class DockerManager:
             raise DockerManagerError(str(exc)) from exc
 
     def start_container(self, *, instance):
-        raise NotImplementedError("Implemented alongside VS-035 (Sprint 5).")
+        try:
+            container = self.client.containers.get(instance.container_name)
+            container.start()
+        except Exception as exc:
+            raise DockerManagerError(str(exc)) from exc
 
     def stop_container(self, *, instance):
-        raise NotImplementedError("Implemented alongside VS-036 (Sprint 5).")
+        try:
+            container = self.client.containers.get(instance.container_name)
+            container.stop()
+        except Exception as exc:
+            raise DockerManagerError(str(exc)) from exc
 
     def restart_container(self, *, instance):
-        raise NotImplementedError("Implemented alongside VS-037 (Sprint 5).")
+        try:
+            container = self.client.containers.get(instance.container_name)
+            container.restart()
+        except Exception as exc:
+            raise DockerManagerError(str(exc)) from exc
 
     def delete_container(self, *, instance):
-        raise NotImplementedError("Implemented alongside VS-038 (Sprint 5).")
+        """Remove the instance container. The persistent volume is retained by
+        default; a Retain/Delete data option arrives in Sprint 6 (VS-043)."""
+        try:
+            container = self.client.containers.get(instance.container_name)
+            container.remove(force=True)
+        except docker.errors.NotFound:
+            # Already gone (removed externally) — nothing to do.
+            pass
+        except Exception as exc:
+            raise DockerManagerError(str(exc)) from exc
 
 
 # Module-level singleton — services import this rather than instantiating

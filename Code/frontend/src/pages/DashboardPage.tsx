@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
-import LaunchButton from "@/components/instance/LaunchButton";
+import InstanceActions from "@/components/instance/InstanceActions";
 import StatusBadge from "@/components/common/StatusBadge";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchDashboard } from "@/services/dashboardService";
@@ -77,7 +77,7 @@ export default function DashboardPage() {
               </p>
               {instance.subdomain && <p className="mt-1 text-xs text-slate-400">{instance.subdomain}</p>}
               <div className="mt-3">
-                <LaunchButton instanceId={instance.id} status={instance.status} />
+                <InstanceActions instanceId={instance.id} status={instance.status} />
               </div>
             </article>
           ))}

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import LaunchButton from "@/components/instance/LaunchButton";
+import InstanceActions from "@/components/instance/InstanceActions";
 import { fetchInstances } from "@/services/instanceService";
 
 /**
@@ -29,7 +29,7 @@ export default function InstancesPage() {
               {instance.subdomain && <p className="text-xs text-slate-400">{instance.subdomain}</p>}
               {instance.error_message && <p className="text-sm text-red-600">{instance.error_message}</p>}
               <div className="mt-3">
-                <LaunchButton instanceId={instance.id} status={instance.status} />
+                <InstanceActions instanceId={instance.id} status={instance.status} />
               </div>
             </article>
           ))}

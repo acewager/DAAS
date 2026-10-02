@@ -15,6 +15,14 @@ app = Celery("dcp")
 app.config_from_object("django.conf:settings", namespace="CELERY")
 app.autodiscover_tasks()
 
+# VS-039: periodic auto-stop sweep for idle running instances.
+app.conf.beat_schedule = {
+    "auto-stop-instances": {
+        "task": "dcp.auto_stop_instances",
+        "schedule": 60.0,
+    },
+}
+
 
 @app.task(bind=True, name="dcp.debug_task")
 def debug_task(self):
