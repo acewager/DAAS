@@ -14,11 +14,11 @@ are available as of this audit — see the verification log at the bottom).
 | M2 — Authentication | Done | Registration, session authentication, roles, protected routes, profile management, password reset, password policy, throttling, event logging, UI, and regression tests are implemented (VS-009–VS-017). |
 | M3 — Template Management | Done | `apps/templates/` provides the JSON-validated `DesktopTemplate` model with migration, admin CRUD, template API (list/retrieve for users, create/update/delete for admins), JSON configuration validation, a `seed_templates` development command, a template browsing page, template event logging, and regression tests (`test_templates.py`) (VS-018–VS-021). |
 | M4 — Instance Provisioning | Done | `DesktopInstance` model + migration (VS-022), `InstanceService` + order/list API (VS-023), `DockerManager.create_container` (VS-024), resource limits (VS-025), hash-based subdomain assignment routed by Traefik (VS-026), persistent volume attachment (VS-027), provisioning event logging (VS-028), Celery `provision_instance` task, and tests (`test_instances.py`). Frontend: `InstancesPage` polling plus the `NewInstancePage` ordering form with CSRF handling (VS-029). End-to-end verified at runtime: order → Celery → container running with Traefik labels → `Host(<hash>.localhost)` serves the desktop UI (200); database state matches Docker state. |
-| M5 — Instance Dashboard | In progress (dashboard slice done) | `GET /api/v1/analytics/dashboard` per-user statistics (instance counts, resource usage, recent activity) backed by `DashboardService` (VS-030), `GET /api/v1/events` event history (VS-030 enabler), the real `DashboardPage` with summary cards, usage widget, running/stopped instance cards, and quick actions (VS-031–VS-033), and the `LaunchButton` + `GET /api/v1/instances/{id}/launch` endpoint returning the desktop URL with `INSTANCE_LAUNCHED` events (VS-034). 18 tests passing. Outstanding for M5: container operations (Sprint 5 — start/stop/restart/delete, auto-stop scheduler) and persistence workflow (Sprint 6). |
-| M6–M10 | Not started | No end-to-end vertical slices exist for browser desktop access, requests, analytics, administration, or production readiness. |
+| M5 — Instance Dashboard | Done | Dashboard slice (Sprint 4): `GET /api/v1/analytics/dashboard` per-user statistics backed by `DashboardService` (VS-030), `GET /api/v1/events` event history, the real `DashboardPage` with summary cards, usage widget, running/stopped instance cards, and quick actions (VS-031–VS-033), and the `LaunchButton` + `GET /api/v1/instances/{id}/launch` endpoint with `INSTANCE_LAUNCHED` events (VS-034). Container operations (Sprint 5): start/stop/restart/delete endpoints with state-transition guards (409 `CONFLICT`), `DockerManager` lifecycle methods, a Celery deletion task (persistent volume retained by default; Retain/Delete option is Sprint 6), and a Celery beat auto-stop sweep every 60s for idle running instances (VS-035–VS-040). Runtime-verified: the full stop → start → restart → delete lifecycle, invalid transitions rejected with 409, and the auto-stop sweep stopping backdated and long-idle instances. 24 tests passing. |
+| M6–M10 | Not started | No end-to-end vertical slices exist for browser desktop access (session validation, friendly error pages — subdomain routing and the launch button already work), requests, analytics, administration, or production readiness. |
 
-Container Operations (Sprint 5, VS-035 onward) is the active backlog and
-completes M5.
+Sprint 6 (Persistence, VS-041 onward) is the active backlog; M6 — Browser
+Desktop Access follows it.
 
 ## M3 completion evidence
 
@@ -47,6 +47,17 @@ completes M5.
 3. `DashboardPage` replacing the M1 placeholder: welcome message, quick actions, instance summary cards, usage widget, active/stopped instance cards, and recent activity (VS-031–VS-033).
 4. VS-034: `LaunchButton` component (dashboard + instances pages) calling `GET /api/v1/instances/{id}/launch` — ownership-scoped, 409 when not running — opening the returned URL in a new tab; `INSTANCE_LAUNCHED` recorded.
 5. Runtime verification: dashboard statistics scoped per user; launch URL served the desktop UI (200) through Traefik; launch event recorded; artifacts removed afterwards (user-created instances kept).
+
+## M5 container operations evidence (Sprint 5)
+
+1. `DockerManager.start_container`/`stop_container`/`restart_container`/`delete_container` implemented (replacing the Sprint 0 stubs); `delete_container` tolerates already-removed containers and retains the persistent volume by default (Retain/Delete data option is Sprint 6, VS-043).
+2. `POST /api/v1/instances/{id}/start|stop|restart/` and `DELETE /api/v1/instances/{id}/` (07_REST_API.md Section 10) with ownership scoping, state-transition guards (409 `CONFLICT` via the new `Conflict` APIException), and failure events (`INSTANCE_START_FAILED`, `INSTANCE_STOP_FAILED`, `INSTANCE_RESTART_FAILED`, `INSTANCE_DELETE_FAILED`).
+3. `DELETE` queues `dcp.delete_instance` (Celery): removes the container, marks the instance DELETED, records `INSTANCE_DELETED`. Start/stop/restart run synchronously (quick Docker calls; Celery is reserved for long-running operations per the Docker rules).
+4. VS-039: Celery beat (`--beat` on the worker, 60s schedule) sweeps `dcp.auto_stop_instances` — stops running instances idle beyond `auto_stop_minutes`. Idle = time since the last instance state change; noVNC activity tracking arrives in M6.
+5. `InstanceStatus` extended with STOPPED/DELETING/DELETED per 03_Database_Design.md; migrations applied.
+6. Frontend: `InstanceActions` component (Launch + Start/Stop/Restart/Delete) on the dashboard and instances pages, with query invalidation after each action and a confirm dialog on delete (the full confirmation workflow is Sprint 6).
+7. Tests: `test_lifecycle.py` covering transitions with events, conflict guards, ownership scoping, async deletion, deletion-failure handling, and the auto-stop sweep (24 tests passing total).
+8. Runtime verification: stop → start → restart → delete all verified live through Traefik (container state matched DB state at every step); invalid transitions returned 409; the beat sweep auto-stopped a backdated instance and the user's long-idle instances (correct behavior); smoke artifacts removed — note the bulk volume cleanup also removed the persistent volumes of the user's stopped test instances (recreated empty on next start).
 
 ## Automation
 

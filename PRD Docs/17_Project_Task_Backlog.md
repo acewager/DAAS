@@ -418,11 +418,13 @@ Status: Done
 
 # Sprint 5 – Container Operations
 
-Status: Not Started
+Status: Done
 
 ## VS-035
 
 Start container
+
+Status: Done
 
 ---
 
@@ -430,11 +432,15 @@ Start container
 
 Stop container
 
+Status: Done
+
 ---
 
 ## VS-037
 
 Restart container
+
+Status: Done
 
 ---
 
@@ -442,17 +448,23 @@ Restart container
 
 Delete container
 
+Status: Done
+
 ---
 
 ## VS-039
 
 Auto-stop scheduler
 
+Status: Done
+
 ---
 
 ## VS-040
 
 Error handling
+
+Status: Done
 
 ---
 

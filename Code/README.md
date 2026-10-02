@@ -7,15 +7,14 @@ noVNC. See the full specification in the project documentation
 
 ## Status
 
-**Milestone M5 — Instance Dashboard in progress; the dashboard slice
-(Sprint 4) is implemented** (`01D_Development_Roadmap.md`,
-`17_Project_Task_Backlog.md`). Container operations (Sprint 5) complete M5.
+**Milestone M5 — Instance Dashboard complete** (`01D_Development_Roadmap.md`,
+`17_Project_Task_Backlog.md`). Sprint 6 (Persistence) remains before M6.
 
 Project foundation (VS-001 through VS-008), authentication (VS-009 through
 VS-017 baseline + rate-limiting/role checks), template management
 (VS-018 through VS-021), instance provisioning (VS-022 through VS-029,
-VS-026 subdomains), and the user dashboard (VS-030 through VS-034) are
-implemented:
+VS-026 subdomains), the user dashboard (VS-030 through VS-034), and
+container operations (VS-035 through VS-040) are implemented:
 
 | Slice  | Deliverable                        | Status |
 |--------|-------------------------------------|--------|
@@ -50,6 +49,12 @@ implemented:
 | VS-032 | Instance cards                       | Done |
 | VS-033 | Usage analytics widget               | Done |
 | VS-034 | Launch Desktop button                | Done |
+| VS-035 | Start container                      | Done |
+| VS-036 | Stop container                       | Done |
+| VS-037 | Restart container                    | Done |
+| VS-038 | Delete container                     | Done |
+| VS-039 | Auto-stop scheduler                  | Done |
+| VS-040 | Error handling                       | Done |
 
 Authentication includes registration, session login/logout, role checks,
 profile management, password reset, throttling, audit events, and regression
@@ -62,7 +67,11 @@ provisioning events, the ordering form and progress UI, and regression
 coverage. The dashboard includes the per-user statistics API
 (`GET /api/v1/analytics/dashboard`), the event history API
 (`GET /api/v1/events`), instance summary cards with a usage widget, and
-the Launch Desktop button via `GET /api/v1/instances/{id}/launch`. See
+the Launch Desktop button via `GET /api/v1/instances/{id}/launch`. Container
+operations add start/stop/restart/delete endpoints with state-transition
+guards (409 on conflicts), a Celery deletion task (persistent volume
+retained by default), and a Celery beat auto-stop sweep for idle instances.
+See
 [`docs/MILESTONE_READINESS_AUDIT.md`](docs/MILESTONE_READINESS_AUDIT.md).
 
 ## Stack
@@ -153,6 +162,8 @@ Section 5.
 
 ## Next Up
 
-**Sprint 5 — Container Operations** (`17_Project_Task_Backlog.md`, VS-035
-onward): start/stop/restart/delete container, auto-stop scheduler, and
-error handling — completing M5 — Instance Dashboard.
+**Sprint 6 — Persistence** (`17_Project_Task_Backlog.md`, VS-041 onward):
+persistent volume manager, delete confirmation workflow, and the
+Retain/Delete data option. The next milestone after that is M6 — Browser
+Desktop Access (noVNC session validation and friendly error pages; the
+subdomain routing and launch button already work).
