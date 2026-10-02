@@ -1,6 +1,6 @@
 # Milestone Readiness Audit
 
-**Audit date:** 2026-10-01
+**Audit date:** 2026-10-02
 **Scope:** implementation in `Code/` compared with the MVP PRD.
 **Verification state:** static review completed. Runtime checks are being
 executed separately (Docker, Node/npm, and the backend Python dependencies
@@ -13,11 +13,12 @@ are available as of this audit — see the verification log at the bottom).
 | M1 — Project Foundation | Done | Django, React/Vite, Compose services for PostgreSQL/Redis/Celery/Traefik, DockerManager, environment template, health endpoint, and CI workflow are present (VS-001–VS-008). |
 | M2 — Authentication | Done | Registration, session authentication, roles, protected routes, profile management, password reset, password policy, throttling, event logging, UI, and regression tests are implemented (VS-009–VS-017). |
 | M3 — Template Management | Done | `apps/templates/` provides the JSON-validated `DesktopTemplate` model with migration, admin CRUD, template API (list/retrieve for users, create/update/delete for admins), JSON configuration validation, a `seed_templates` development command, a template browsing page, template event logging, and regression tests (`test_templates.py`) (VS-018–VS-021). |
-| M4 — Instance Provisioning | Done | `DesktopInstance` model + migration (VS-022), `InstanceService` + order/list API (VS-023), `DockerManager.create_container` (VS-024), resource limits (VS-025), hash-based subdomain assignment routed by Traefik (VS-026), persistent volume attachment (VS-027), provisioning event logging (VS-028), Celery `provision_instance` task, and tests (`test_instances.py`, 15 passing). Frontend: `InstancesPage` polling plus the `NewInstancePage` ordering form with CSRF handling (VS-029). End-to-end verified at runtime: order → Celery → container running with Traefik labels → `Host(<hash>.localhost)` serves the desktop UI (200); database state matches Docker state. |
-| M5–M10 | Not started | No end-to-end vertical slices exist for the dashboard, browser desktop access, requests, analytics, administration, or production readiness. |
+| M4 — Instance Provisioning | Done | `DesktopInstance` model + migration (VS-022), `InstanceService` + order/list API (VS-023), `DockerManager.create_container` (VS-024), resource limits (VS-025), hash-based subdomain assignment routed by Traefik (VS-026), persistent volume attachment (VS-027), provisioning event logging (VS-028), Celery `provision_instance` task, and tests (`test_instances.py`). Frontend: `InstancesPage` polling plus the `NewInstancePage` ordering form with CSRF handling (VS-029). End-to-end verified at runtime: order → Celery → container running with Traefik labels → `Host(<hash>.localhost)` serves the desktop UI (200); database state matches Docker state. |
+| M5 — Instance Dashboard | In progress (dashboard slice done) | `GET /api/v1/analytics/dashboard` per-user statistics (instance counts, resource usage, recent activity) backed by `DashboardService` (VS-030), `GET /api/v1/events` event history (VS-030 enabler), the real `DashboardPage` with summary cards, usage widget, running/stopped instance cards, and quick actions (VS-031–VS-033), and the `LaunchButton` + `GET /api/v1/instances/{id}/launch` endpoint returning the desktop URL with `INSTANCE_LAUNCHED` events (VS-034). 18 tests passing. Outstanding for M5: container operations (Sprint 5 — start/stop/restart/delete, auto-stop scheduler) and persistence workflow (Sprint 6). |
+| M6–M10 | Not started | No end-to-end vertical slices exist for browser desktop access, requests, analytics, administration, or production readiness. |
 
-Instance Dashboard (M5) is the next milestone; Sprint 4 (VS-030 onward) is
-the active backlog.
+Container Operations (Sprint 5, VS-035 onward) is the active backlog and
+completes M5.
 
 ## M3 completion evidence
 
@@ -38,6 +39,14 @@ the active backlog.
 7. CSRF handling in the frontend: `apiClient` interceptor sending the `csrftoken` cookie as `X-CSRFToken` on unsafe methods; `AuthContext` seeds the cookie via `GET /auth/csrf/` at application start. Required because DRF session authentication enforces CSRF on authenticated POSTs (e.g., `POST /instances`, profile update, logout).
 8. Frontend: `InstancesPage` polling every 5 seconds (status, template, resources, subdomain, error message) and the `NewInstancePage` ordering form (template select, name, persistence, auto-stop, CPU/memory limits) wired through `instanceService.createInstance`.
 9. Tests: `test_instances.py` covering ordering, ownership scoping, Celery dispatch, template validation, the hash-based subdomain property, and Traefik label assignment (15 tests passing total).
+
+## M5 dashboard slice evidence (Sprint 4)
+
+1. `GET /api/v1/analytics/dashboard` (07_REST_API.md Section 12): per-user instance counts (total/running/stopped/failed/provisioning), resource usage aggregated across running instances (CPU cores, memory GB), and recent activity from the event log — backed by `DashboardService`.
+2. `GET /api/v1/events` (07_REST_API.md Section 13): the authenticated user's event history, ownership-scoped.
+3. `DashboardPage` replacing the M1 placeholder: welcome message, quick actions, instance summary cards, usage widget, active/stopped instance cards, and recent activity (VS-031–VS-033).
+4. VS-034: `LaunchButton` component (dashboard + instances pages) calling `GET /api/v1/instances/{id}/launch` — ownership-scoped, 409 when not running — opening the returned URL in a new tab; `INSTANCE_LAUNCHED` recorded.
+5. Runtime verification: dashboard statistics scoped per user; launch URL served the desktop UI (200) through Traefik; launch event recorded; artifacts removed afterwards (user-created instances kept).
 
 ## Automation
 

@@ -374,11 +374,13 @@ Status: Done
 
 # Sprint 4 – Dashboard
 
-Status: Not Started
+Status: In Progress
 
 ## VS-030
 
 Dashboard API
+
+Status: Done
 
 ---
 
@@ -386,11 +388,15 @@ Dashboard API
 
 Running instances page
 
+Status: Done
+
 ---
 
 ## VS-032
 
 Instance cards
+
+Status: Done
 
 ---
 
@@ -398,11 +404,15 @@ Instance cards
 
 Usage analytics widget
 
+Status: Done
+
 ---
 
 ## VS-034
 
 Launch Desktop button
+
+Status: Done
 
 ---
 

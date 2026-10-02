@@ -7,13 +7,15 @@ noVNC. See the full specification in the project documentation
 
 ## Status
 
-**Milestone M4 — Instance Provisioning complete** (`01D_Development_Roadmap.md`,
-`17_Project_Task_Backlog.md`).
+**Milestone M5 — Instance Dashboard in progress; the dashboard slice
+(Sprint 4) is implemented** (`01D_Development_Roadmap.md`,
+`17_Project_Task_Backlog.md`). Container operations (Sprint 5) complete M5.
 
 Project foundation (VS-001 through VS-008), authentication (VS-009 through
 VS-017 baseline + rate-limiting/role checks), template management
-(VS-018 through VS-021), and instance provisioning (VS-022 through VS-029)
-are implemented:
+(VS-018 through VS-021), instance provisioning (VS-022 through VS-029,
+VS-026 subdomains), and the user dashboard (VS-030 through VS-034) are
+implemented:
 
 | Slice  | Deliverable                        | Status |
 |--------|-------------------------------------|--------|
@@ -43,6 +45,11 @@ are implemented:
 | VS-024 | Docker create container              | Done |
 | VS-026 | Subdomain assignment                 | Done |
 | VS-029 | Provisioning progress UI             | Done |
+| VS-030 | Dashboard statistics API             | Done |
+| VS-031 | Running instances page               | Done |
+| VS-032 | Instance cards                       | Done |
+| VS-033 | Usage analytics widget               | Done |
+| VS-034 | Launch Desktop button                | Done |
 
 Authentication includes registration, session login/logout, role checks,
 profile management, password reset, throttling, audit events, and regression
@@ -52,7 +59,10 @@ event logging, and regression coverage. Instance provisioning includes the
 instance order API, Celery-driven Docker provisioning with resource limits
 and persistent storage, hash-based subdomains routed by Traefik (VS-026),
 provisioning events, the ordering form and progress UI, and regression
-coverage. See
+coverage. The dashboard includes the per-user statistics API
+(`GET /api/v1/analytics/dashboard`), the event history API
+(`GET /api/v1/events`), instance summary cards with a usage widget, and
+the Launch Desktop button via `GET /api/v1/instances/{id}/launch`. See
 [`Code/docs/MILESTONE_READINESS_AUDIT.md`](Code/docs/MILESTONE_READINESS_AUDIT.md).
 
 ## Stack
@@ -143,6 +153,6 @@ Section 5.
 
 ## Next Up
 
-**Sprint 4 — Dashboard** (`17_Project_Task_Backlog.md`, VS-030 onward):
-dashboard API, running instances page, instance cards, usage analytics
-widget, and the Launch Desktop button.
+**Sprint 5 — Container Operations** (`17_Project_Task_Backlog.md`, VS-035
+onward): start/stop/restart/delete container, auto-stop scheduler, and
+error handling — completing M5 — Instance Dashboard.
