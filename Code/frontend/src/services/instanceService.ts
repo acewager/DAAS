@@ -45,7 +45,8 @@ export async function launchInstance(id: string) {
   return response.data.data.url;
 }
 
-/** Container operations (Sprint 5, VS-035 through VS-038). */
+/** Container operations (Sprint 5, VS-035 through VS-038). With deleteData
+ * the persistent volume is removed too (VS-043); by default data is retained. */
 export async function startInstance(id: string) {
   await apiClient.post(`/instances/${id}/start/`);
 }
@@ -58,6 +59,6 @@ export async function restartInstance(id: string) {
   await apiClient.post(`/instances/${id}/restart/`);
 }
 
-export async function deleteInstance(id: string) {
-  await apiClient.delete(`/instances/${id}/`);
+export async function deleteInstance(id: string, deleteData = false) {
+  await apiClient.delete(`/instances/${id}/${deleteData ? "?delete_data=true" : ""}`);
 }

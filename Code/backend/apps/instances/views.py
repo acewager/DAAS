@@ -65,11 +65,13 @@ class InstanceRestartView(APIView):
 
 
 class InstanceDeleteView(APIView):
-    """DELETE /api/v1/instances/{id} (VS-038). Deletion is asynchronous; the
-    persistent volume is retained by default (Sprint 6, VS-043)."""
+    """DELETE /api/v1/instances/{id} (VS-038). Deletion is asynchronous.
+    Query parameter delete_data=true also removes the persistent volume
+    (VS-043); by default the data is retained."""
 
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, instance_id):
-        instance = InstanceService.delete(instance_id=instance_id, actor=request.user)
+        delete_data = str(request.query_params.get("delete_data", "")).lower() == "true"
+        instance = InstanceService.delete(instance_id=instance_id, actor=request.user, delete_data=delete_data)
         return Response({"success": True, "message": "Instance deletion queued.", "data": {"instance": InstanceSerializer(instance).data}}, status=202)

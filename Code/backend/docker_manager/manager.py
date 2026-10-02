@@ -101,6 +101,17 @@ class DockerManager:
         except Exception as exc:
             raise DockerManagerError(str(exc)) from exc
 
+    def remove_volume(self, *, name):
+        """Remove a named data volume (VS-043 — delete data option). Missing
+        volumes are tolerated (already removed)."""
+        try:
+            volume = self.client.volumes.get(name)
+            volume.remove(force=True)
+        except docker.errors.NotFound:
+            pass
+        except Exception as exc:
+            raise DockerManagerError(str(exc)) from exc
+
 
 # Module-level singleton — services import this rather than instantiating
 # DockerManager directly, so it stays mockable in tests

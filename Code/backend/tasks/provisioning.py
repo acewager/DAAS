@@ -18,6 +18,8 @@ def provision_instance(instance_id):
         container = docker_manager.create_container(instance=instance, template=instance.template)
         instance.container_id = container.id
         instance.save(update_fields=["container_id", "updated_at"])
+        from services.volume_service import VolumeService
+        VolumeService.record_for_instance(instance)
         _wait_for_desktop_ui(instance, container)
         instance.status = InstanceStatus.RUNNING
         instance.save(update_fields=["status", "updated_at"])

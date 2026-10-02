@@ -1,5 +1,5 @@
 from datetime import timedelta
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from django.urls import reverse
@@ -72,7 +72,7 @@ def test_delete_queues_async_deletion(delay):
     assert response.status_code == 202
     instance.refresh_from_db()
     assert instance.status == InstanceStatus.DELETING
-    delay.assert_called_once_with(str(instance.id))
+    delay.assert_called_once_with(str(instance.id), delete_data=False)
     assert EventLog.objects.filter(actor=user, event_type=EventType.INSTANCE_DELETE_REQUESTED).exists()
 
 
@@ -125,3 +125,77 @@ def test_auto_stop_task_stops_only_idle_running_instances():
     recent.refresh_from_db()
     assert idle.status == InstanceStatus.STOPPED
     assert recent.status == InstanceStatus.RUNNING
+
+
+@pytest.mark.django_db
+def test_provisioning_records_persistent_volume():
+    user = User.objects.create_user("owner", "owner@example.com", "SecurePass123!")
+    template = make_template()
+    instance = DesktopInstance.objects.create(user=user, template=template, name="Mine", cpu_limit="2", memory_limit="2G", persistent=True)
+
+    with patch("docker_manager.manager.docker_manager.create_container") as create_mock, patch("tasks.provisioning._wait_for_desktop_ui"):
+        container = MagicMock()
+        container.id = "container-id-123"
+        create_mock.return_value = container
+        from tasks.provisioning import provision_instance
+        provision_instance(str(instance.id))
+
+    instance.refresh_from_db()
+    assert instance.status == InstanceStatus.RUNNING
+    volume = instance.volume
+    assert volume.host_path == f"dcp-data-{instance.id}"
+    assert volume.persistent is True
+    assert volume.retain_after_delete is True
+
+
+@pytest.mark.django_db
+@patch("tasks.lifecycle.delete_instance.delay")
+def test_delete_retains_data_by_default(delay):
+    user = User.objects.create_user("owner", "owner@example.com", "SecurePass123!")
+    template = make_template()
+    instance = DesktopInstance.objects.create(user=user, template=template, name="Mine", cpu_limit="1", memory_limit="1G", status=InstanceStatus.RUNNING, persistent=True)
+    from apps.instances.models import Volume
+    Volume.objects.create(instance=instance, host_path=f"dcp-data-{instance.id}")
+    client = APIClient(); client.force_authenticate(user)
+
+    response = client.delete(reverse("instance-delete", kwargs={"instance_id": instance.id}))
+    assert response.status_code == 202
+    delay.assert_called_once_with(str(instance.id), delete_data=False)
+
+
+@pytest.mark.django_db
+@patch("tasks.lifecycle.delete_instance.delay")
+def test_delete_with_delete_data_flag_queues_volume_removal(delay):
+    user = User.objects.create_user("owner", "owner@example.com", "SecurePass123!")
+    template = make_template()
+    instance = DesktopInstance.objects.create(user=user, template=template, name="Mine", cpu_limit="1", memory_limit="1G", status=InstanceStatus.RUNNING, persistent=True)
+    client = APIClient(); client.force_authenticate(user)
+
+    response = client.delete(reverse("instance-delete", kwargs={"instance_id": instance.id}) + "?delete_data=true")
+    assert response.status_code == 202
+    delay.assert_called_once_with(str(instance.id), delete_data=True)
+
+
+@pytest.mark.django_db
+def test_delete_instance_task_removes_volume_only_when_requested():
+    user = User.objects.create_user("owner", "owner@example.com", "SecurePass123!")
+    template = make_template()
+    instance = DesktopInstance.objects.create(user=user, template=template, name="Mine", cpu_limit="1", memory_limit="1G", status=InstanceStatus.DELETING, persistent=True)
+    from apps.instances.models import Volume
+    volume = Volume.objects.create(instance=instance, host_path=f"dcp-data-{instance.id}")
+
+    # Default (retain): the volume record survives, no Docker call.
+    with patch("docker_manager.manager.docker_manager.delete_container") as delete_mock, patch("docker_manager.manager.docker_manager.remove_volume") as remove_mock:
+        from tasks.lifecycle import delete_instance
+        delete_instance(str(instance.id), delete_data=False)
+        delete_mock.assert_called_once()
+        remove_mock.assert_not_called()
+    assert Volume.objects.filter(pk=volume.pk).exists()
+    assert EventLog.objects.filter(event_type=EventType.INSTANCE_DELETED, message__contains="retained").exists()
+
+    # delete_data=True: the volume and its record are removed.
+    with patch("docker_manager.manager.docker_manager.delete_container"), patch("docker_manager.manager.docker_manager.remove_volume") as remove_mock:
+        delete_instance(str(instance.id), delete_data=True)
+        remove_mock.assert_called_once_with(name=f"dcp-data-{instance.id}")
+    assert not Volume.objects.filter(pk=volume.pk).exists()
+    assert EventLog.objects.filter(event_type=EventType.INSTANCE_DELETED, message__contains="removed").exists()

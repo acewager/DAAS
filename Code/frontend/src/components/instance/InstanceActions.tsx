@@ -1,22 +1,29 @@
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import DeleteConfirmModal from "@/components/instance/DeleteConfirmModal";
 import { deleteInstance, launchInstance, restartInstance, startInstance, stopInstance } from "@/services/instanceService";
 
 interface InstanceActionsProps {
   instanceId: string;
   status: string;
+  instanceName?: string;
+  persistent?: boolean;
 }
 
 /**
  * Instance lifecycle actions (Sprint 5, VS-035 through VS-038) plus the
- * Launch Desktop button (VS-034).
+ * Launch Desktop button (VS-034) and the delete confirmation workflow
+ * with the Retain/Delete data option (Sprint 6, VS-042/VS-043).
  *
- * Start/stop/restart run synchronously; delete is queued asynchronously.
- * Launch opens the hash-based subdomain in a new tab — session validation
- * before routing arrives in M6.
+ * Start/stop/restart run synchronously; delete is queued asynchronously
+ * after confirmation. Launch navigates the current tab: browsers block
+ * window.open() called from an async callback (outside the user gesture),
+ * so a new tab would silently fail.
  */
-export default function InstanceActions({ instanceId, status }: InstanceActionsProps) {
+export default function InstanceActions({ instanceId, status, instanceName = "this instance", persistent = false }: InstanceActionsProps) {
   const queryClient = useQueryClient();
+  const [confirming, setConfirming] = useState(false);
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ["instances"] });
     void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
@@ -26,9 +33,15 @@ export default function InstanceActions({ instanceId, status }: InstanceActionsP
   const stop = useMutation({ mutationFn: stopInstance, onSuccess: invalidate });
   const restart = useMutation({ mutationFn: restartInstance, onSuccess: invalidate });
   const remove = useMutation({
-    mutationFn: deleteInstance,
-    onSuccess: invalidate,
-    onError: invalidate,
+    mutationFn: ({ id, deleteData }: { id: string; deleteData: boolean }) => deleteInstance(id, deleteData),
+    onSuccess: () => {
+      setConfirming(false);
+      invalidate();
+    },
+    onError: () => {
+      setConfirming(false);
+      invalidate();
+    },
   });
   // Launch navigates the current tab: browsers block window.open() called
   // from an async callback (outside the user gesture), so a new tab would
@@ -77,15 +90,21 @@ export default function InstanceActions({ instanceId, status }: InstanceActionsP
         <button
           className="rounded bg-danger/10 px-3 py-1.5 text-xs text-danger disabled:opacity-40"
           disabled={busy}
-          onClick={() => {
-            if (window.confirm("Delete this instance? Its persistent data will be retained until removal is confirmed in a later release.")) {
-              remove.mutate(instanceId);
-            }
-          }}
+          onClick={() => setConfirming(true)}
           type="button"
         >
-          {remove.isPending ? "Deleting…" : "Delete"}
+          Delete
         </button>
+      )}
+
+      {confirming && (
+        <DeleteConfirmModal
+          instanceName={instanceName}
+          persistent={persistent}
+          isPending={remove.isPending}
+          onCancel={() => setConfirming(false)}
+          onConfirm={(deleteData) => remove.mutate({ id: instanceId, deleteData })}
+        />
       )}
     </div>
   );

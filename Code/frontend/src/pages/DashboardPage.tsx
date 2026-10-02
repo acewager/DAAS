@@ -77,7 +77,7 @@ export default function DashboardPage() {
               </p>
               {instance.subdomain && <p className="mt-1 text-xs text-slate-400">{instance.subdomain}</p>}
               <div className="mt-3">
-                <InstanceActions instanceId={instance.id} status={instance.status} />
+                <InstanceActions instanceId={instance.id} status={instance.status} instanceName={instance.name} persistent={instance.persistent} />
               </div>
             </article>
           ))}

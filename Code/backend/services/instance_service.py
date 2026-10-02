@@ -92,15 +92,16 @@ class InstanceService:
         return instance
 
     @staticmethod
-    def delete(*, instance_id, actor=None):
+    def delete(*, instance_id, actor=None, delete_data=False):
         """Queue asynchronous deletion of a user-owned instance (VS-038).
-        The persistent volume is retained by default (Sprint 6, VS-043)."""
+        With delete_data the persistent volume is removed too (VS-043);
+        by default the data is retained (Sprint 6)."""
         instance = InstanceService._get_instance(user=actor, instance_id=instance_id)
         if instance.status not in (InstanceStatus.RUNNING, InstanceStatus.STOPPED, InstanceStatus.FAILED):
             raise Conflict("Instance cannot be deleted in its current state.")
         instance.status = InstanceStatus.DELETING
         instance.save(update_fields=["status", "updated_at"])
-        record_event(actor=actor, event_type=EventType.INSTANCE_DELETE_REQUESTED, message="Instance deletion requested.", metadata={"instance_id": str(instance.id)})
+        record_event(actor=actor, event_type=EventType.INSTANCE_DELETE_REQUESTED, message="Instance deletion requested.", metadata={"instance_id": str(instance.id), "delete_data": bool(delete_data)})
         from tasks.lifecycle import delete_instance
-        delete_instance.delay(str(instance.id))
+        delete_instance.delay(str(instance.id), delete_data=delete_data)
         return instance

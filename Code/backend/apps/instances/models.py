@@ -47,3 +47,16 @@ class DesktopInstance(TimeStampedModel):
         domain. Lowercase — browsers normalize hostnames and Traefik matches
         case-insensitively, but the label stays consistent with what is sent."""
         return f"{self.access_hash[:7].lower()}.{settings.TRAEFIK_DOMAIN}"
+
+
+class Volume(TimeStampedModel):
+    """Persistent storage tracking (03_Database_Design.md #volumes, VS-041)."""
+
+    instance = models.OneToOneField(DesktopInstance, on_delete=models.CASCADE, related_name="volume")
+    host_path = models.TextField()
+    persistent = models.BooleanField(default=True)
+    retain_after_delete = models.BooleanField(default=True)
+    size_bytes = models.BigIntegerField(null=True, blank=True)
+
+    def __str__(self) -> str:
+        return f"{self.host_path} (instance {self.instance_id})"

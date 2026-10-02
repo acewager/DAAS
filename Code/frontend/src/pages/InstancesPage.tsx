@@ -29,7 +29,7 @@ export default function InstancesPage() {
               {instance.subdomain && <p className="text-xs text-slate-400">{instance.subdomain}</p>}
               {instance.error_message && <p className="text-sm text-red-600">{instance.error_message}</p>}
               <div className="mt-3">
-                <InstanceActions instanceId={instance.id} status={instance.status} />
+                <InstanceActions instanceId={instance.id} status={instance.status} instanceName={instance.name} persistent={instance.persistent} />
               </div>
             </article>
           ))}
