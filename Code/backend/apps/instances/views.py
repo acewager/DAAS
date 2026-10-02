@@ -21,3 +21,14 @@ class InstanceListView(APIView):
         data = serializer.validated_data
         instance = InstanceService.request(user=request.user, template=data.pop("template_id"), **data)
         return Response({"success": True, "message": "Instance provisioning requested.", "data": {"instance": InstanceSerializer(instance).data}}, status=202)
+
+
+class InstanceLaunchView(APIView):
+    """GET /api/v1/instances/{id}/launch — Desktop Launch (07_REST_API.md
+    Section 10, VS-034)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, instance_id):
+        url = InstanceService.launch(user=request.user, instance_id=instance_id)
+        return Response({"success": True, "message": "Desktop launch URL generated.", "data": {"url": url}})

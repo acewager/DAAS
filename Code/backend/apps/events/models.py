@@ -18,6 +18,7 @@ class EventType(models.TextChoices):
 	INSTANCE_REQUESTED = "INSTANCE_REQUESTED", "Instance Requested"
 	INSTANCE_PROVISIONED = "INSTANCE_PROVISIONED", "Instance Provisioned"
 	INSTANCE_PROVISION_FAILED = "INSTANCE_PROVISION_FAILED", "Instance Provision Failed"
+	INSTANCE_LAUNCHED = "INSTANCE_LAUNCHED", "Instance Launched"
 
 
 class EventLog(TimeStampedModel):

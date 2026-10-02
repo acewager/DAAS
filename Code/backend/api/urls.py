@@ -13,4 +13,6 @@ urlpatterns = [
     path("auth/", include("apps.accounts.urls")),
     path("templates/", include("apps.templates.urls")),
     path("instances/", include("apps.instances.urls")),
+    path("analytics/", include("apps.analytics.urls")),
+    path("events/", include("apps.events.urls")),
 ]

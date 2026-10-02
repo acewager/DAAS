@@ -65,3 +65,23 @@ def test_container_creation_assigns_subdomain_labels():
     assert labels[f"traefik.http.routers.{router}.rule"] == f"Host(`{instance.subdomain}`)"
     assert labels[f"traefik.http.services.{router}.loadbalancer.server.port"] == "3000"
     assert kwargs["volumes"]  # persistent volume attached for persistent instances
+
+
+@pytest.mark.django_db
+def test_launch_returns_url_for_running_owned_instance(settings):
+    settings.DEBUG = True  # match development, where the launch URL is http
+    user = User.objects.create_user("owner", "owner@example.com", "SecurePass123!")
+    other = User.objects.create_user("other", "other@example.com", "SecurePass123!")
+    template = DesktopTemplate.objects.create(name="Minimal", slug="minimal", json_configuration={"image": "desktop:minimal"})
+    running = DesktopInstance.objects.create(user=user, template=template, name="Mine", cpu_limit="1", memory_limit="1G", status=InstanceStatus.RUNNING)
+    theirs = DesktopInstance.objects.create(user=other, template=template, name="Theirs", cpu_limit="1", memory_limit="1G", status=InstanceStatus.RUNNING)
+    queued = DesktopInstance.objects.create(user=user, template=template, name="Queued", cpu_limit="1", memory_limit="1G")
+
+    client = APIClient(); client.force_authenticate(user)
+    response = client.get(reverse("instance-launch", kwargs={"instance_id": running.id}))
+    assert response.status_code == 200
+    assert response.data["data"]["url"] == f"http://{running.subdomain}"
+    assert EventLog.objects.filter(actor=user, event_type=EventType.INSTANCE_LAUNCHED).exists()
+    # Not running → 409; not owned → 404
+    assert client.get(reverse("instance-launch", kwargs={"instance_id": queued.id})).status_code == 409
+    assert client.get(reverse("instance-launch", kwargs={"instance_id": theirs.id})).status_code == 404

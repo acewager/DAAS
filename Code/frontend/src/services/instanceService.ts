@@ -38,3 +38,9 @@ export async function createInstance(input: OrderInstanceInput) {
   });
   return response.data.data.instance;
 }
+
+/** Returns the desktop launch URL for a running instance (VS-034). */
+export async function launchInstance(id: string) {
+  const response = await apiClient.get<{ data: { url: string } }>(`/instances/${id}/launch/`);
+  return response.data.data.url;
+}

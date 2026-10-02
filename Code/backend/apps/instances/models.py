@@ -15,6 +15,7 @@ class InstanceStatus(models.TextChoices):
     QUEUED = "QUEUED", "Queued"
     PROVISIONING = "PROVISIONING", "Provisioning"
     RUNNING = "RUNNING", "Running"
+    STOPPED = "STOPPED", "Stopped"
     FAILED = "FAILED", "Failed"
 
 

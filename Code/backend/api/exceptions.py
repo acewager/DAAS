@@ -9,7 +9,16 @@ error response follows the same shape:
       "error": {"code": "...", "message": "..."}
     }
 """
+from rest_framework.exceptions import APIException
 from rest_framework.views import exception_handler
+
+
+class Conflict(APIException):
+    """409 — the request conflicts with the resource's current state."""
+
+    status_code = 409
+    default_detail = "The request conflicts with the current state."
+    default_code = "conflict"
 
 
 def standard_exception_handler(exc, context):
