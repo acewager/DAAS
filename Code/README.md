@@ -84,10 +84,12 @@ Traefik v3 · React 18 + TypeScript + Vite · Tailwind CSS · TanStack Query
 Requires Docker and Docker Compose on a Linux host (or a Linux VM — see
 `12_Deployment.md` Section 5 for the documented dev setup).
 
+**One command brings the whole platform up** — it creates `.env`, builds the
+images, migrates, seeds the development templates, and starts every service:
+
 ```bash
 git clone <this-repo>
-cd DAAS
-cp .env.example .env
+cd DAAS/Code
 ./scripts/init_dev.sh
 ```
 

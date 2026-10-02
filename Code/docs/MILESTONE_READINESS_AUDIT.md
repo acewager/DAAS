@@ -48,6 +48,16 @@ Desktop Access follows it.
 4. VS-034: `LaunchButton` component (dashboard + instances pages) calling `GET /api/v1/instances/{id}/launch` — ownership-scoped, 409 when not running — opening the returned URL in a new tab; `INSTANCE_LAUNCHED` recorded.
 5. Runtime verification: dashboard statistics scoped per user; launch URL served the desktop UI (200) through Traefik; launch event recorded; artifacts removed afterwards (user-created instances kept).
 
+## Launch button fixes (2026-10-02, user-reported)
+
+The user reported the Launch button "did nothing". Root cause and fixes:
+
+1. **Popup blocking (fixed):** the launch mutation called `window.open()` from an async callback — outside the user-gesture call stack — so browsers blocked the new tab silently. The button now navigates the current tab (`window.location.href`), which is never blocked, and shows error feedback on failure.
+2. **Desktop readiness gate (fixed):** the webtop UI takes tens of seconds to boot after the container starts, so launching immediately after provisioning returned 502. The provisioning task now waits (bounded, 30 × 2s) for the desktop web UI to accept connections before marking the instance RUNNING — the Launch button only appears when the desktop is actually reachable.
+3. **Subdomain casing (cosmetic, fixed):** the access hash is case-sensitive base64, so subdomains were mixed-case; browsers lowercase hostnames. The subdomain property now lowercases the label (Traefik matches case-insensitively — verified both cases return 200).
+4. **Verified in a real browser session:** register → new instance form → provisioning → Launch click navigated to the instance's hash subdomain. Note: the automation browser's proxy cannot resolve wildcard-`localhost` subdomains (502 from its gateway — sandbox artifact; the same URLs return 200 from the server and from inside the Traefik network, and on a real Linux host `*.localhost` resolves to loopback via systemd-resolved).
+5. `scripts/init_dev.sh` polished into the maintained one-command startup: creates `.env`, verifies Docker, builds, waits for postgres+redis health, migrates, seeds templates, starts the full stack, waits for the health endpoint, and warns about missing `/etc/hosts` entries.
+
 ## M5 container operations evidence (Sprint 5)
 
 1. `DockerManager.start_container`/`stop_container`/`restart_container`/`delete_container` implemented (replacing the Sprint 0 stubs); `delete_container` tolerates already-removed containers and retains the persistent volume by default (Retain/Delete data option is Sprint 6, VS-043).

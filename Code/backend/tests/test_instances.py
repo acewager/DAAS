@@ -42,8 +42,9 @@ def test_instance_subdomain_is_hash_based(settings):
     user = User.objects.create_user("owner", "owner@example.com", "SecurePass123!")
     template = DesktopTemplate.objects.create(name="Minimal", slug="minimal", json_configuration={"image": "desktop:minimal"})
     instance = DesktopInstance.objects.create(user=user, template=template, name="My desktop", cpu_limit="1", memory_limit="1G")
-    assert instance.subdomain == f"{instance.access_hash[:7]}.{settings.TRAEFIK_DOMAIN}"
+    assert instance.subdomain == f"{instance.access_hash[:7].lower()}.{settings.TRAEFIK_DOMAIN}"
     assert instance.subdomain.endswith(".localhost")
+    assert instance.subdomain == instance.subdomain.lower()
 
 
 @pytest.mark.django_db

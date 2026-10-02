@@ -44,6 +44,6 @@ class DesktopInstance(TimeStampedModel):
     def subdomain(self) -> str:
         """Public host for this instance (ADR-011, 05_Container_Architecture.md
         Section 8): a short hash derived from the access hash plus the platform
-        domain. The hash reduces predictability; Traefik routes it to the
-        container."""
-        return f"{self.access_hash[:7]}.{settings.TRAEFIK_DOMAIN}"
+        domain. Lowercase — browsers normalize hostnames and Traefik matches
+        case-insensitively, but the label stays consistent with what is sent."""
+        return f"{self.access_hash[:7].lower()}.{settings.TRAEFIK_DOMAIN}"

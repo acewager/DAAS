@@ -30,7 +30,15 @@ export default function InstanceActions({ instanceId, status }: InstanceActionsP
     onSuccess: invalidate,
     onError: invalidate,
   });
-  const launch = useMutation({ mutationFn: launchInstance });
+  // Launch navigates the current tab: browsers block window.open() called
+  // from an async callback (outside the user gesture), so a new tab would
+  // silently fail. Same-tab navigation is never blocked.
+  const launch = useMutation({
+    mutationFn: launchInstance,
+    onSuccess: (url) => {
+      window.location.href = url;
+    },
+  });
 
   const button = "rounded border border-border px-3 py-1.5 text-xs disabled:opacity-40";
   const busy = start.isPending || stop.isPending || restart.isPending || remove.isPending;
@@ -38,14 +46,17 @@ export default function InstanceActions({ instanceId, status }: InstanceActionsP
   return (
     <div className="flex flex-wrap items-center gap-2">
       {status === "RUNNING" && (
-        <button
-          className="rounded bg-blue-600 px-3 py-1.5 text-xs text-white disabled:opacity-40"
-          disabled={launch.isPending}
-          onClick={() => launch.mutate(instanceId)}
-          type="button"
-        >
-          {launch.isPending ? "Launching…" : "Launch desktop"}
-        </button>
+        <span className="flex flex-col items-start">
+          <button
+            className="rounded bg-blue-600 px-3 py-1.5 text-xs text-white disabled:opacity-40"
+            disabled={launch.isPending}
+            onClick={() => launch.mutate(instanceId)}
+            type="button"
+          >
+            {launch.isPending ? "Launching…" : "Launch desktop"}
+          </button>
+          {launch.isError && <span className="text-[10px] text-red-600">Unable to launch.</span>}
+        </span>
       )}
       {status === "STOPPED" && (
         <button className="rounded bg-success/10 px-3 py-1.5 text-xs text-success disabled:opacity-40" disabled={busy} onClick={() => start.mutate(instanceId)} type="button">
