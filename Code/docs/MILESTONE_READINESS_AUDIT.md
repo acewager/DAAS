@@ -69,6 +69,15 @@ The user reported the Launch button "did nothing". Root cause and fixes:
 7. Tests: `test_lifecycle.py` covering transitions with events, conflict guards, ownership scoping, async deletion, deletion-failure handling, and the auto-stop sweep (24 tests passing total).
 8. Runtime verification: stop → start → restart → delete all verified live through Traefik (container state matched DB state at every step); invalid transitions returned 409; the beat sweep auto-stopped a backdated instance and the user's long-idle instances (correct behavior); smoke artifacts removed — note the bulk volume cleanup also removed the persistent volumes of the user's stopped test instances (recreated empty on next start).
 
+## M5 persistence evidence (Sprint 6)
+
+1. `Volume` model per 03_Database_Design.md #volumes (instance OneToOne, host_path, persistent, retain_after_delete, size_bytes reserved) with migration.
+2. `VolumeService` (VS-041): `record_for_instance` called from provisioning (pairs each persistent instance with its data volume record; Docker auto-creates the named volume when the container references it), `remove` (Docker volume removal through DockerManager + record deletion; retained volumes keep their record; removal failures recorded).
+3. VS-043: `DELETE /api/v1/instances/{id}?delete_data=true` removes the persistent volume too; by default data is retained. The Celery `delete_instance` task takes the flag and records whether data was retained or removed. The DockerManager gained `remove_volume`.
+4. VS-042: `DeleteConfirmModal` (replacing the interim `window.confirm`) — destructive-action confirmation per 09_User_Experience.md, with the Retain/Delete data radio choice shown for persistent instances; wired into `InstanceActions` on the dashboard and instances pages.
+5. Tests: volume record creation at provisioning, retain-by-default, the delete_data flag queuing volume removal, and the task removing the volume + record only when requested (28 tests passing total).
+6. Runtime verification: provisioned instance → Volume record created (`dcp-data-<uuid>`, retain_after_delete=True) + Docker volume present; delete (default) → DELETED with volume and record retained; delete with delete_data → DELETED with volume and record removed; the confirmation modal verified interactively (opens, shows the warning, Cancel leaves the instance intact).
+
 ## Automation
 
 `.github/workflows/ci.yml` prevents regressions by running Django migration checks, migrations, and pytest against PostgreSQL and Redis, plus a clean frontend dependency install and production build for pull requests and pushes to `main`.

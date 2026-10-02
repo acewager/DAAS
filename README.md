@@ -7,14 +7,18 @@ noVNC. See the full specification in the project documentation
 
 ## Status
 
-**Milestone M5 — Instance Dashboard complete** (`01D_Development_Roadmap.md`,
-`17_Project_Task_Backlog.md`). Sprint 6 (Persistence) remains before M6.
+**Milestone M5 — Instance Dashboard complete (including Sprint 6
+persistence)** (`01D_Development_Roadmap.md`, `17_Project_Task_Backlog.md`).
+M6 — Browser Desktop Access is next: subdomain routing, the launch flow,
+and persistence already work; noVNC session validation and friendly error
+pages remain.
 
 Project foundation (VS-001 through VS-008), authentication (VS-009 through
 VS-017 baseline + rate-limiting/role checks), template management
 (VS-018 through VS-021), instance provisioning (VS-022 through VS-029,
-VS-026 subdomains), the user dashboard (VS-030 through VS-034), and
-container operations (VS-035 through VS-040) are implemented:
+VS-026 subdomains), the user dashboard (VS-030 through VS-034), container
+operations (VS-035 through VS-040), and persistence (VS-041 through
+VS-043) are implemented:
 
 | Slice  | Deliverable                        | Status |
 |--------|-------------------------------------|--------|
@@ -55,6 +59,9 @@ container operations (VS-035 through VS-040) are implemented:
 | VS-038 | Delete container                     | Done |
 | VS-039 | Auto-stop scheduler                  | Done |
 | VS-040 | Error handling                       | Done |
+| VS-041 | Persistent volume manager            | Done |
+| VS-042 | Delete confirmation workflow         | Done |
+| VS-043 | Retain/Delete data option            | Done |
 
 Authentication includes registration, session login/logout, role checks,
 profile management, password reset, throttling, audit events, and regression
@@ -71,7 +78,9 @@ the Launch Desktop button via `GET /api/v1/instances/{id}/launch`. Container
 operations add start/stop/restart/delete endpoints with state-transition
 guards (409 on conflicts), a Celery deletion task (persistent volume
 retained by default), and a Celery beat auto-stop sweep for idle instances.
-See
+Persistence adds the Volume tracking model (03_Database_Design.md #volumes),
+a volume service pairing instances with their data volumes, and the delete
+confirmation modal with the Retain/Delete data choice. See
 [`Code/docs/MILESTONE_READINESS_AUDIT.md`](Code/docs/MILESTONE_READINESS_AUDIT.md).
 
 ## Stack
@@ -164,8 +173,7 @@ Section 5.
 
 ## Next Up
 
-**Sprint 6 — Persistence** (`17_Project_Task_Backlog.md`, VS-041 onward):
-persistent volume manager, delete confirmation workflow, and the
-Retain/Delete data option. The next milestone after that is M6 — Browser
-Desktop Access (noVNC session validation and friendly error pages; the
-subdomain routing and launch button already work).
+**M6 — Browser Desktop Access**: noVNC session validation before routing
+(ForwardAuth) and friendly error pages — the subdomain routing, launch
+flow, and persistence already work. Per the backlog this continues into
+Sprint 7 — Software Requests (VS-044 onward).

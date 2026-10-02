@@ -470,11 +470,13 @@ Status: Done
 
 # Sprint 6 – Persistence
 
-Status: Not Started
+Status: Done
 
 ## VS-041
 
 Persistent volume manager
+
+Status: Done
 
 ---
 
@@ -482,11 +484,15 @@ Persistent volume manager
 
 Delete confirmation workflow
 
+Status: Done
+
 ---
 
 ## VS-043
 
 Retain/Delete data option
+
+Status: Done
 
 ---
 
