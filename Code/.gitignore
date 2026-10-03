@@ -6,6 +6,8 @@ __pycache__/
 venv/
 staticfiles/
 *.sqlite3
+celerybeat-schedule
+celerybeat.pid
 
 # Node
 node_modules/
