@@ -7,7 +7,7 @@ noVNC. See the full specification in the project documentation
 
 ## Status
 
-**Milestone M6 — Browser Desktop Access complete** (`01D_Development_Roadmap.md`,
+**Milestone M7 — Software Request Workflow complete** (`01D_Development_Roadmap.md`,
 `17_Project_Task_Backlog.md`).
 
 Project foundation (VS-001 through VS-008), authentication (VS-009 through
@@ -15,8 +15,8 @@ VS-017 baseline + rate-limiting/role checks), template management
 (VS-018 through VS-021), instance provisioning (VS-022 through VS-029,
 VS-026 subdomains), the user dashboard (VS-030 through VS-034), container
 operations (VS-035 through VS-040), persistence (VS-041 through VS-043),
-and browser desktop access (session validation + friendly error pages) are
-implemented:
+browser desktop access (session validation + friendly error pages), and
+the software request workflow (VS-044 through VS-048) are implemented:
 
 | Slice  | Deliverable                        | Status |
 |--------|-------------------------------------|--------|
@@ -60,6 +60,11 @@ implemented:
 | VS-041 | Persistent volume manager            | Done |
 | VS-042 | Delete confirmation workflow         | Done |
 | VS-043 | Retain/Delete data option            | Done |
+| VS-044 | Software Request model               | Done |
+| VS-045 | Submit request API + UI              | Done |
+| VS-046 | Admin approval page                  | Done |
+| VS-047 | Celery installation task             | Done |
+| VS-048 | Status tracking                      | Done |
 
 Authentication includes registration, session login/logout, role checks,
 profile management, password reset, throttling, audit events, and regression
@@ -83,7 +88,11 @@ access adds the Traefik ForwardAuth session validation
 (`/api/v1/auth/desktop-auth/` — owner + RUNNING only, with friendly HTML
 error pages for sign-in, access-denied, and not-running cases) and a
 lowest-priority fallback router serving friendly pages for stopped
-instances and unknown subdomains. See
+instances and unknown subdomains. The software request workflow adds
+`POST/GET /api/v1/software-requests` with admin-only approve/reject
+endpoints, a strictly validated package name (no shell metacharacters),
+a Celery installation task (`apt-get` inside the target container), the
+user's request history page, and the admin approval page. See
 [`docs/MILESTONE_READINESS_AUDIT.md`](docs/MILESTONE_READINESS_AUDIT.md).
 
 ## Stack
@@ -176,7 +185,7 @@ Section 5.
 
 ## Next Up
 
-**Sprint 7 — Software Requests** (`17_Project_Task_Backlog.md`, VS-044
-onward): software request model, submit request API, admin approval page,
-Celery installation task, and status tracking. Next milestone after that
-is M8 — Analytics & Event Logging.
+**Sprint 8 — Administration** (`17_Project_Task_Backlog.md`, VS-049
+onward): admin dashboard, user management, instance management, event log
+viewer, and the analytics dashboard. Next milestone after that is M8 —
+Analytics & Event Logging.

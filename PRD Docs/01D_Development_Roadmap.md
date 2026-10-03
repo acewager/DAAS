@@ -106,7 +106,7 @@ The MVP is divided into the following milestones.
 | M4 | Instance Provisioning | Done |
 | M5 | Instance Dashboard | Done |
 | M6 | Browser Desktop Access | Done |
-| M7 | Software Request Workflow | Planned |
+| M7 | Software Request Workflow | Done |
 | M8 | Analytics & Event Logging | Planned |
 | M9 | Administration Portal | Planned |
 | M10 | Production Deployment | Planned |

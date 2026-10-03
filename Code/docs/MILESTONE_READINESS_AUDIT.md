@@ -16,10 +16,11 @@ are available as of this audit — see the verification log at the bottom).
 | M4 — Instance Provisioning | Done | `DesktopInstance` model + migration (VS-022), `InstanceService` + order/list API (VS-023), `DockerManager.create_container` (VS-024), resource limits (VS-025), hash-based subdomain assignment routed by Traefik (VS-026), persistent volume attachment (VS-027), provisioning event logging (VS-028), Celery `provision_instance` task, and tests (`test_instances.py`). Frontend: `InstancesPage` polling plus the `NewInstancePage` ordering form with CSRF handling (VS-029). End-to-end verified at runtime: order → Celery → container running with Traefik labels → `Host(<hash>.localhost)` serves the desktop UI (200); database state matches Docker state. |
 | M5 — Instance Dashboard | Done | Dashboard slice (Sprint 4): `GET /api/v1/analytics/dashboard` per-user statistics backed by `DashboardService` (VS-030), `GET /api/v1/events` event history, the real `DashboardPage` with summary cards, usage widget, running/stopped instance cards, and quick actions (VS-031–VS-033), and the `LaunchButton` + `GET /api/v1/instances/{id}/launch` endpoint with `INSTANCE_LAUNCHED` events (VS-034). Container operations (Sprint 5): start/stop/restart/delete endpoints with state-transition guards (409 `CONFLICT`), `DockerManager` lifecycle methods, a Celery deletion task (persistent volume retained by default; Retain/Delete option is Sprint 6), and a Celery beat auto-stop sweep every 60s for idle running instances (VS-035–VS-040). Runtime-verified: the full stop → start → restart → delete lifecycle, invalid transitions rejected with 409, and the auto-stop sweep stopping backdated and long-idle instances. 24 tests passing. |
 | M6 — Browser Desktop Access | Done | ForwardAuth session validation (`GET /api/v1/auth/desktop-auth/`): owner + RUNNING only, friendly HTML error pages (sign-in 401, access-denied 403, not-running 409); platform-domain session cookie so desktop subdomains share the session; lowest-priority fallback router + `desktop_fallback` catch-all serving friendly pages for stopped instances and unknown subdomains; hash generation hardened against invalid leading DNS characters. Runtime-verified through the real Traefik: owner+RUNNING → 200, no session → 401 page, another user → 403 page (acceptance criterion met), stopped → 409 page, unknown subdomain → 404 page, platform hosts unaffected. |
-| M7–M10 | Not started | No end-to-end vertical slices exist for software requests, analytics, administration, or production readiness. |
+| M7 — Software Request Workflow | Done | `SoftwareRequest` model with the full status lifecycle (Pending → Approved/Rejected → Installing → Installed/Failed), `POST/GET /api/v1/software-requests` with ownership scoping and admin visibility + status filter, admin-only approve/reject endpoints (409 on conflicts, reviewed_by/reviewed_at recorded, events), `DockerManager.install_software` via `exec_run` with strictly validated package names (injection attempts rejected), the Celery `dcp.install_software` task, the user's request history page, and the admin approval page. Runtime-verified live: request → approval → `htop` installed into the real container (`/usr/bin/htop` present) → INSTALLED. 46 tests passing. |
+| M8–M10 | Not started | No end-to-end vertical slices exist for analytics, administration, or production readiness. |
 
-Sprint 7 (Software Requests, VS-044 onward) is the active backlog; M7 —
-Software Request Workflow follows it.
+Sprint 8 (Administration, VS-049 onward) is the active backlog; M8 —
+Analytics & Event Logging follows it.
 
 ## M3 completion evidence
 
@@ -88,6 +89,17 @@ The user reported the Launch button "did nothing". Root cause and fixes:
 5. `generate_access_hash` regenerates until the first character is alphanumeric (token_urlsafe can start with `-`/`_`, invalid as a leading DNS label).
 6. Tests: `test_desktop_auth.py` (8 tests) covering all ForwardAuth outcomes, platform-host denial, port/mixed-case host resolution, and both fallback pages; 38 tests passing total.
 7. Runtime verification through the real Traefik: owner + RUNNING → 200 (desktop UI served); no session → 401 sign-in page; another user → 403 access-denied page (acceptance criterion "Unauthorized users cannot access another user's desktop"); stopped instance → 409 not-running page via the fallback; unknown subdomain → 404 friendly page; app.localhost and the API health endpoint unaffected.
+
+## M7 software request workflow evidence (Sprint 7)
+
+1. `SoftwareRequest` model per 03_Database_Design.md #software_requests (user, instance, software_name, justification, status enum Pending → Approved/Rejected → Installing → Installed/Failed, reviewed_by, reviewed_at) with migration.
+2. `POST/GET /api/v1/software-requests` (07_REST_API.md Section 11, VS-045): the user submits for their own non-deleted instances (ownership enforced) and views their own history; admins see all with an optional `?status=PENDING` filter for the approval page. `GET .../{id}` is ownership-scoped (admins any).
+3. Package-name validation: `^[A-Za-z0-9][A-Za-z0-9+._-]*$` — shell metacharacters and injection attempts rejected with 400 (verified live: `htop; rm -rf /` rejected).
+4. `POST .../{id}/approve` and `POST .../{id}/reject` (VS-046): admin-only, PENDING-only (409 conflicts otherwise), reviewed_by/reviewed_at recorded, events logged (`SOFTWARE_REQUEST_APPROVED`, `SOFTWARE_REQUEST_REJECTED`).
+5. VS-047: approval dispatches `dcp.install_software` (Celery) → `DockerManager.install_software` runs `apt-get update` + `apt-get install -y <name>` inside the target container via `exec_run` (argv list, no shell) → INSTALLED, failures map to FAILED with events (`SOFTWARE_INSTALLED`, `SOFTWARE_INSTALL_FAILED`).
+6. Frontend: `SoftwareRequestsPage` (request history + New Request form with instance selector, live status badges) and `AdminRequestsPage` (pending approvals, Approve/Reject with a reject confirmation modal); nav links (Requests for all users, Approvals for admins).
+7. Tests: `test_software_requests.py` (8 tests) covering submission ownership + validation, list scoping, admin filters, approve/reject guards, and the installation task success/failure paths; 46 tests passing total.
+8. Runtime verification: full lifecycle live — user request (PENDING) → admin approval (APPROVED with reviewer recorded) → Celery installed `htop` into the real container (`/usr/bin/htop` present) → INSTALLED; events recorded end-to-end.
 
 ## Automation
 

@@ -498,11 +498,13 @@ Status: Done
 
 # Sprint 7 – Software Requests
 
-Status: Not Started
+Status: Done
 
 ## VS-044
 
 Software Request model
+
+Status: Done
 
 ---
 
@@ -510,11 +512,15 @@ Software Request model
 
 Submit request API
 
+Status: Done
+
 ---
 
 ## VS-046
 
 Admin approval page
+
+Status: Done
 
 ---
 
@@ -522,11 +528,15 @@ Admin approval page
 
 Celery installation task
 
+Status: Done
+
 ---
 
 ## VS-048
 
 Status tracking
+
+Status: Done
 
 ---
 
