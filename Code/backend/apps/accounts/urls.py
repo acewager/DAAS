@@ -1,9 +1,11 @@
 """Authentication routes."""
 from django.urls import path
 
+from .desktop_auth import DesktopAuthView
 from .views import CsrfView, LoginView, LogoutView, MeView, PasswordResetConfirmView, PasswordResetRequestView, RegisterView
 
 urlpatterns = [
+    path("desktop-auth/", DesktopAuthView.as_view(), name="desktop-auth"),
     path("csrf/", CsrfView.as_view(), name="auth-csrf"),
     path("register/", RegisterView.as_view(), name="auth-register"),
     path("login/", LoginView.as_view(), name="auth-login"),

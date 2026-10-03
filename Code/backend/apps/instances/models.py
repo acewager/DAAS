@@ -7,7 +7,13 @@ from apps.common.models import TimeStampedModel
 
 
 def generate_access_hash():
-    return secrets.token_urlsafe(16)
+    # token_urlsafe can start with "-" or "_", which are invalid as a leading
+    # DNS label character in the derived subdomain; regenerate until the
+    # first character is alphanumeric.
+    while True:
+        token = secrets.token_urlsafe(16)
+        if token[0].isalnum():
+            return token
 
 
 class InstanceStatus(models.TextChoices):

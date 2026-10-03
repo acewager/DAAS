@@ -64,6 +64,7 @@ def test_container_creation_assigns_subdomain_labels():
     labels = kwargs["labels"]
     assert labels["traefik.enable"] == "true"
     assert labels[f"traefik.http.routers.{router}.rule"] == f"Host(`{instance.subdomain}`)"
+    assert labels[f"traefik.http.routers.{router}.middlewares"] == "desktop-auth@docker"
     assert labels[f"traefik.http.services.{router}.loadbalancer.server.port"] == "3000"
     assert kwargs["volumes"]  # persistent volume attached for persistent instances
 

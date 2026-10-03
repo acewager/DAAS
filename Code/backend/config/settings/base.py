@@ -24,6 +24,12 @@ ALLOWED_HOSTS = [
     for h in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
     if h.strip()
 ]
+# Desktop subdomains (<hash>.<domain>) reach the backend through the
+# desktop-fallback catch-all router (M6) — allow the platform domain's
+# subdomains so the friendly error pages can be served.
+_platform_domain = os.environ.get("TRAEFIK_DOMAIN", "localhost")
+if f".{_platform_domain}" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(f".{_platform_domain}")
 
 # ---------------------------------------------------------------------------
 # Applications
@@ -124,6 +130,10 @@ AUTH_PASSWORD_VALIDATORS = [
 
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Strict"
+# Domain cookie scoped to the platform domain: desktop subdomains
+# (<hash>.<domain>) must share the session with app.localhost for the
+# ForwardAuth session validation (M6, 05_Container_Architecture.md Section 13).
+SESSION_COOKIE_DOMAIN = "." + os.environ.get("TRAEFIK_DOMAIN", "localhost")
 SESSION_COOKIE_AGE = int(os.environ.get("SESSION_COOKIE_AGE", 60 * 60 * 24 * 7))
 CSRF_COOKIE_SAMESITE = "Strict"
 

@@ -52,14 +52,17 @@ class DockerManager:
             config = template.json_configuration
             volumes = {f"dcp-data-{instance.id}": {"bind": "/home/user", "mode": "rw"}} if instance.persistent else None
             # VS-026: each instance gets a hash-based subdomain routed by
-            # Traefik to the container's web UI (ADR-011). Session validation
-            # before routing arrives in M6 (Browser Desktop Access).
+            # Traefik to the container's web UI (ADR-011). M6: every request
+            # passes the desktop-auth ForwardAuth middleware first, which
+            # validates the session and instance ownership before routing
+            # (05_Container_Architecture.md Section 13).
             web_port = config.get("web_port", 3000)
             router = f"desktop-{instance.id}"
             labels = {
                 "traefik.enable": "true",
                 f"traefik.http.routers.{router}.rule": f"Host(`{instance.subdomain}`)",
                 f"traefik.http.routers.{router}.service": router,
+                f"traefik.http.routers.{router}.middlewares": "desktop-auth@docker",
                 f"traefik.http.services.{router}.loadbalancer.server.port": str(web_port),
             }
             container = self.client.containers.create(config["image"], name=instance.container_name, hostname=f"inst-{str(instance.id)[:8]}", detach=True, mem_limit=instance.memory_limit, nano_cpus=int(float(instance.cpu_limit) * 1_000_000_000), volumes=volumes, network="dcp-network", labels=labels)

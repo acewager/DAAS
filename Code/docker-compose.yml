@@ -68,6 +68,19 @@ services:
       - "traefik.http.routers.backend-app.rule=Host(`app.localhost`) && PathPrefix(`/api/`)"
       - "traefik.http.routers.backend-app.priority=100"
       - "traefik.http.routers.backend-app.service=backend"
+      # M6 — Browser Desktop Access: session validation before routing
+      # desktop traffic (05_Container_Architecture.md Section 13). Defined
+      # once here; desktop container routers reference desktop-auth@docker.
+      - "traefik.http.middlewares.desktop-auth.forwardauth.address=http://backend:8000/api/v1/auth/desktop-auth/"
+      - "traefik.http.middlewares.desktop-auth.forwardauth.trustForwardHeader=true"
+      # M6 — friendly fallback for desktop subdomains without an active
+      # route: Traefik drops routes for exited containers, so stopped
+      # instances and unknown subdomains land here (lowest priority — real
+      # routers always win). Host wildcard matches exactly one subdomain
+      # label (v3 syntax; preferred over HostRegexp).
+      - "traefik.http.routers.desktop-fallback.rule=Host(`*.${TRAEFIK_DOMAIN}`)"
+      - "traefik.http.routers.desktop-fallback.priority=1"
+      - "traefik.http.routers.desktop-fallback.service=backend"
 
   celery:
     build:
