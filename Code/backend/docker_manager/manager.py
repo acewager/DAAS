@@ -115,6 +115,29 @@ class DockerManager:
         except Exception as exc:
             raise DockerManagerError(str(exc)) from exc
 
+    def install_software(self, *, instance, name):
+        """Install a package into a RUNNING instance's container (VS-047).
+        The name is a validated Debian package name — no shell metacharacters;
+        exec_run does not use a shell, so the command is passed as an argv
+        list."""
+        try:
+            container = self.client.containers.get(instance.container_name)
+            result = container.exec_run(
+                ["apt-get", "update", "-qq"],
+            )
+            if result.exit_code != 0:
+                raise DockerManagerError(result.output.decode(errors="replace")[-500:])
+            result = container.exec_run(
+                ["apt-get", "install", "-y", "-qq", name],
+                user="root",
+            )
+            if result.exit_code != 0:
+                raise DockerManagerError(result.output.decode(errors="replace")[-500:])
+        except DockerManagerError:
+            raise
+        except Exception as exc:
+            raise DockerManagerError(str(exc)) from exc
+
 
 # Module-level singleton — services import this rather than instantiating
 # DockerManager directly, so it stays mockable in tests

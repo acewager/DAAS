@@ -22,6 +22,10 @@ export default function UserLayout() {
             <Link to="/templates" className="text-slate-600 hover:text-slate-900 dark:text-slate-300">Templates</Link>
             <Link to="/instances" className="text-slate-600 hover:text-slate-900 dark:text-slate-300">Instances</Link>
             <Link to="/instances/new" className="text-slate-600 hover:text-slate-900 dark:text-slate-300">New instance</Link>
+            <Link to="/software-requests" className="text-slate-600 hover:text-slate-900 dark:text-slate-300">Requests</Link>
+            {user && (user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+              <Link to="/admin/requests" className="text-slate-600 hover:text-slate-900 dark:text-slate-300">Approvals</Link>
+            )}
             {user ? (
               <button className="rounded-lg border border-border px-3 py-1.5" onClick={() => void signOut()} type="button">
                 Logout

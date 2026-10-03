@@ -11,6 +11,8 @@ import PasswordResetPage from "@/pages/PasswordResetPage";
 import TemplatesPage from "@/pages/TemplatesPage";
 import NewInstancePage from "@/pages/NewInstancePage";
 import InstancesPage from "@/pages/InstancesPage";
+import SoftwareRequestsPage from "@/pages/SoftwareRequestsPage";
+import AdminRequestsPage from "@/pages/AdminRequestsPage";
 
 /**
  * Route table per 08_Frontend_Architecture.md Section 6.
@@ -38,6 +40,8 @@ export default function AppRoutes() {
           <Route path="/templates" element={<TemplatesPage />} />
           <Route path="/instances" element={<InstancesPage />} />
           <Route path="/instances/new" element={<NewInstancePage />} />
+          <Route path="/software-requests" element={<SoftwareRequestsPage />} />
+          <Route path="/admin/requests" element={<AdminRequestsPage />} />
         </Route>
       </Routes>
     </AuthProvider>

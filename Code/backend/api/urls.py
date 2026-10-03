@@ -15,4 +15,5 @@ urlpatterns = [
     path("instances/", include("apps.instances.urls")),
     path("analytics/", include("apps.analytics.urls")),
     path("events/", include("apps.events.urls")),
+    path("software-requests/", include("apps.software_requests.urls")),
 ]
