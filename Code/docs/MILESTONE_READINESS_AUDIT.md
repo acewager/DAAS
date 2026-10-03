@@ -1,6 +1,6 @@
 # Milestone Readiness Audit
 
-**Audit date:** 2026-10-02
+**Audit date:** 2026-10-03
 **Scope:** implementation in `Code/` compared with the MVP PRD.
 **Verification state:** static review completed. Runtime checks are being
 executed separately (Docker, Node/npm, and the backend Python dependencies
@@ -15,10 +15,11 @@ are available as of this audit — see the verification log at the bottom).
 | M3 — Template Management | Done | `apps/templates/` provides the JSON-validated `DesktopTemplate` model with migration, admin CRUD, template API (list/retrieve for users, create/update/delete for admins), JSON configuration validation, a `seed_templates` development command, a template browsing page, template event logging, and regression tests (`test_templates.py`) (VS-018–VS-021). |
 | M4 — Instance Provisioning | Done | `DesktopInstance` model + migration (VS-022), `InstanceService` + order/list API (VS-023), `DockerManager.create_container` (VS-024), resource limits (VS-025), hash-based subdomain assignment routed by Traefik (VS-026), persistent volume attachment (VS-027), provisioning event logging (VS-028), Celery `provision_instance` task, and tests (`test_instances.py`). Frontend: `InstancesPage` polling plus the `NewInstancePage` ordering form with CSRF handling (VS-029). End-to-end verified at runtime: order → Celery → container running with Traefik labels → `Host(<hash>.localhost)` serves the desktop UI (200); database state matches Docker state. |
 | M5 — Instance Dashboard | Done | Dashboard slice (Sprint 4): `GET /api/v1/analytics/dashboard` per-user statistics backed by `DashboardService` (VS-030), `GET /api/v1/events` event history, the real `DashboardPage` with summary cards, usage widget, running/stopped instance cards, and quick actions (VS-031–VS-033), and the `LaunchButton` + `GET /api/v1/instances/{id}/launch` endpoint with `INSTANCE_LAUNCHED` events (VS-034). Container operations (Sprint 5): start/stop/restart/delete endpoints with state-transition guards (409 `CONFLICT`), `DockerManager` lifecycle methods, a Celery deletion task (persistent volume retained by default; Retain/Delete option is Sprint 6), and a Celery beat auto-stop sweep every 60s for idle running instances (VS-035–VS-040). Runtime-verified: the full stop → start → restart → delete lifecycle, invalid transitions rejected with 409, and the auto-stop sweep stopping backdated and long-idle instances. 24 tests passing. |
-| M6–M10 | Not started | No end-to-end vertical slices exist for browser desktop access (session validation, friendly error pages — subdomain routing and the launch button already work), requests, analytics, administration, or production readiness. |
+| M6 — Browser Desktop Access | Done | ForwardAuth session validation (`GET /api/v1/auth/desktop-auth/`): owner + RUNNING only, friendly HTML error pages (sign-in 401, access-denied 403, not-running 409); platform-domain session cookie so desktop subdomains share the session; lowest-priority fallback router + `desktop_fallback` catch-all serving friendly pages for stopped instances and unknown subdomains; hash generation hardened against invalid leading DNS characters. Runtime-verified through the real Traefik: owner+RUNNING → 200, no session → 401 page, another user → 403 page (acceptance criterion met), stopped → 409 page, unknown subdomain → 404 page, platform hosts unaffected. |
+| M7–M10 | Not started | No end-to-end vertical slices exist for software requests, analytics, administration, or production readiness. |
 
-Sprint 6 (Persistence, VS-041 onward) is the active backlog; M6 — Browser
-Desktop Access follows it.
+Sprint 7 (Software Requests, VS-044 onward) is the active backlog; M7 —
+Software Request Workflow follows it.
 
 ## M3 completion evidence
 
@@ -77,6 +78,16 @@ The user reported the Launch button "did nothing". Root cause and fixes:
 4. VS-042: `DeleteConfirmModal` (replacing the interim `window.confirm`) — destructive-action confirmation per 09_User_Experience.md, with the Retain/Delete data radio choice shown for persistent instances; wired into `InstanceActions` on the dashboard and instances pages.
 5. Tests: volume record creation at provisioning, retain-by-default, the delete_data flag queuing volume removal, and the task removing the volume + record only when requested (28 tests passing total).
 6. Runtime verification: provisioned instance → Volume record created (`dcp-data-<uuid>`, retain_after_delete=True) + Docker volume present; delete (default) → DELETED with volume and record retained; delete with delete_data → DELETED with volume and record removed; the confirmation modal verified interactively (opens, shows the warning, Cancel leaves the instance intact).
+
+## M6 browser desktop access evidence
+
+1. `DesktopAuthView` (`GET /api/v1/auth/desktop-auth/`, `apps/accounts/desktop_auth.py`): the Traefik ForwardAuth endpoint — receives every desktop-subdomain request (original host forwarded via `X-Forwarded-Host`, session cookie via the platform-domain cookie) and decides: authenticated owner + RUNNING → 200; unauthenticated → 401 friendly sign-in page; not the owner → 403 friendly access-denied page; owner + not RUNNING → 409 friendly not-running page. Platform hosts are never authorized through this path. `access_hash__istartswith` lookup, DELETED instances excluded.
+2. `SESSION_COOKIE_DOMAIN = ".<TRAEFIK_DOMAIN>"` — a real bug found during verification: the session cookie was host-only for `app.localhost`, so the browser never sent it to desktop subdomains and no user could pass the ForwardAuth. The domain cookie lets all platform subdomains share the session.
+3. Traefik: the `desktop-auth` ForwardAuth middleware defined once on the backend service (`trustForwardHeader=true`); desktop container routers reference `desktop-auth@docker` (label asserted in tests).
+4. Friendly fallback: Traefik drops routes for exited containers, so stopped instances and unknown subdomains never reach the ForwardAuth — a lowest-priority `desktop-fallback` router (`Host(`*.<domain>`)`, v3 wildcard syntax; the v2 `{name: regexp}` placeholder syntax does not work in v3) routes them to the backend's `desktop_fallback` catch-all view, which serves the friendly not-running page (409) for known instances and a friendly not-found page (404) otherwise. `ALLOWED_HOSTS` gained `.<TRAEFIK_DOMAIN>` so the fallback can serve any subdomain host.
+5. `generate_access_hash` regenerates until the first character is alphanumeric (token_urlsafe can start with `-`/`_`, invalid as a leading DNS label).
+6. Tests: `test_desktop_auth.py` (8 tests) covering all ForwardAuth outcomes, platform-host denial, port/mixed-case host resolution, and both fallback pages; 38 tests passing total.
+7. Runtime verification through the real Traefik: owner + RUNNING → 200 (desktop UI served); no session → 401 sign-in page; another user → 403 access-denied page (acceptance criterion "Unauthorized users cannot access another user's desktop"); stopped instance → 409 not-running page via the fallback; unknown subdomain → 404 friendly page; app.localhost and the API health endpoint unaffected.
 
 ## Automation
 

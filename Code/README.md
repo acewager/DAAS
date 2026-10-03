@@ -7,18 +7,16 @@ noVNC. See the full specification in the project documentation
 
 ## Status
 
-**Milestone M5 — Instance Dashboard complete (including Sprint 6
-persistence)** (`01D_Development_Roadmap.md`, `17_Project_Task_Backlog.md`).
-M6 — Browser Desktop Access is next: subdomain routing, the launch flow,
-and persistence already work; noVNC session validation and friendly error
-pages remain.
+**Milestone M6 — Browser Desktop Access complete** (`01D_Development_Roadmap.md`,
+`17_Project_Task_Backlog.md`).
 
 Project foundation (VS-001 through VS-008), authentication (VS-009 through
 VS-017 baseline + rate-limiting/role checks), template management
 (VS-018 through VS-021), instance provisioning (VS-022 through VS-029,
 VS-026 subdomains), the user dashboard (VS-030 through VS-034), container
-operations (VS-035 through VS-040), and persistence (VS-041 through
-VS-043) are implemented:
+operations (VS-035 through VS-040), persistence (VS-041 through VS-043),
+and browser desktop access (session validation + friendly error pages) are
+implemented:
 
 | Slice  | Deliverable                        | Status |
 |--------|-------------------------------------|--------|
@@ -80,7 +78,12 @@ guards (409 on conflicts), a Celery deletion task (persistent volume
 retained by default), and a Celery beat auto-stop sweep for idle instances.
 Persistence adds the Volume tracking model (03_Database_Design.md #volumes),
 a volume service pairing instances with their data volumes, and the delete
-confirmation modal with the Retain/Delete data choice. See
+confirmation modal with the Retain/Delete data choice. Browser desktop
+access adds the Traefik ForwardAuth session validation
+(`/api/v1/auth/desktop-auth/` — owner + RUNNING only, with friendly HTML
+error pages for sign-in, access-denied, and not-running cases) and a
+lowest-priority fallback router serving friendly pages for stopped
+instances and unknown subdomains. See
 [`docs/MILESTONE_READINESS_AUDIT.md`](docs/MILESTONE_READINESS_AUDIT.md).
 
 ## Stack
@@ -173,7 +176,7 @@ Section 5.
 
 ## Next Up
 
-**M6 — Browser Desktop Access**: noVNC session validation before routing
-(ForwardAuth) and friendly error pages — the subdomain routing, launch
-flow, and persistence already work. Per the backlog this continues into
-Sprint 7 — Software Requests (VS-044 onward).
+**Sprint 7 — Software Requests** (`17_Project_Task_Backlog.md`, VS-044
+onward): software request model, submit request API, admin approval page,
+Celery installation task, and status tracking. Next milestone after that
+is M8 — Analytics & Event Logging.
