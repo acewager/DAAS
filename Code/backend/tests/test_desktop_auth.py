@@ -118,3 +118,71 @@ def test_fallback_serves_not_found_for_unknown_subdomain(settings):
     response = client.get("/", HTTP_HOST="zzzzzzz.localhost")
     assert response.status_code == 404
     assert b"Desktop not found" in response.content
+
+
+@pytest.mark.django_db
+def test_launch_token_authorizes_unauthenticated_desktop_request():
+    """The dev bridge: browsers reject Domain cookies for single-label
+    localhost, so the launch URL carries a short-lived signed token that the
+    ForwardAuth validates — and sets the desktop cookie from."""
+    from services.desktop_auth_tokens import DESKTOP_AUTH_COOKIE
+
+    user = User.objects.create_user("owner", "owner@example.com", "SecurePass123!")
+    template = make_template()
+    instance = DesktopInstance.objects.create(user=user, template=template, name="Mine", cpu_limit="1", memory_limit="1G", status=InstanceStatus.RUNNING)
+
+    client = APIClient()  # no session — the token carries the authorization
+    response = client.get("/api/v1/auth/desktop-auth/", {"auth": _launch_token(user, instance)}, HTTP_X_FORWARDED_HOST=instance.subdomain)
+    assert response.status_code == 200
+    assert DESKTOP_AUTH_COOKIE in response.cookies
+
+
+def _launch_token(user, instance):
+    from services.desktop_auth_tokens import issue_token
+    return issue_token(user_id=user.id, instance_hash=instance.access_hash)
+
+
+@pytest.mark.django_db
+def test_expired_launch_token_gets_friendly_page():
+    user = User.objects.create_user("owner", "owner@example.com", "SecurePass123!")
+    template = make_template()
+    instance = DesktopInstance.objects.create(user=user, template=template, name="Mine", cpu_limit="1", memory_limit="1G", status=InstanceStatus.RUNNING)
+
+    client = APIClient()
+    response = client.get("/api/v1/auth/desktop-auth/", {"auth": _launch_token(user, instance) + "tampered"}, HTTP_X_FORWARDED_HOST=instance.subdomain)
+    assert response.status_code == 401
+    assert b"Link expired" in response.content
+
+
+@pytest.mark.django_db
+def test_launch_token_bound_to_another_desktop_is_denied():
+    owner = User.objects.create_user("owner", "owner@example.com", "SecurePass123!")
+    template = make_template()
+    mine = DesktopInstance.objects.create(user=owner, template=template, name="Mine", cpu_limit="1", memory_limit="1G", status=InstanceStatus.RUNNING)
+    other = DesktopInstance.objects.create(user=owner, template=template, name="Other", cpu_limit="1", memory_limit="1G", status=InstanceStatus.RUNNING)
+
+    client = APIClient()
+    # A token issued for "Other" used against "Mine"'s subdomain → denied.
+    response = client.get("/api/v1/auth/desktop-auth/", {"auth": _launch_token(owner, other)}, HTTP_X_FORWARDED_HOST=mine.subdomain)
+    assert response.status_code == 403
+    assert b"Access denied" in response.content
+
+
+@pytest.mark.django_db
+def test_desktop_cookie_carries_subsequent_requests():
+    from services.desktop_auth_tokens import DESKTOP_AUTH_COOKIE, issue_token
+
+    user = User.objects.create_user("owner", "owner@example.com", "SecurePass123!")
+    template = make_template()
+    instance = DesktopInstance.objects.create(user=user, template=template, name="Mine", cpu_limit="1", memory_limit="1G", status=InstanceStatus.RUNNING)
+
+    client = APIClient()
+    client.cookies[DESKTOP_AUTH_COOKIE] = issue_token(user_id=user.id, instance_hash=instance.access_hash)
+    response = client.get("/api/v1/auth/desktop-auth/", HTTP_X_FORWARDED_HOST=instance.subdomain)
+    assert response.status_code == 200
+
+    # A cookie for a different desktop is denied on this host.
+    other = DesktopInstance.objects.create(user=user, template=template, name="Other", cpu_limit="1", memory_limit="1G", status=InstanceStatus.RUNNING)
+    client.cookies[DESKTOP_AUTH_COOKIE] = issue_token(user_id=user.id, instance_hash=other.access_hash)
+    response = client.get("/api/v1/auth/desktop-auth/", HTTP_X_FORWARDED_HOST=instance.subdomain)
+    assert response.status_code == 403

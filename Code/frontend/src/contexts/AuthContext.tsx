@@ -37,8 +37,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = async () => {
-    await logoutAccount();
+    // Clear local state first: the UI must reflect the logout even if the
+    // server-side call fails (e.g., an already-invalid session).
     setUser(null);
+    try {
+      await logoutAccount();
+    } catch {
+      // Nothing to do — the local state is cleared either way.
+    }
   };
 
   const value = useMemo(

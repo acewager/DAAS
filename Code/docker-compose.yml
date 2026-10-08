@@ -71,8 +71,10 @@ services:
       # M6 — Browser Desktop Access: session validation before routing
       # desktop traffic (05_Container_Architecture.md Section 13). Defined
       # once here; desktop container routers reference desktop-auth@docker.
+      # addAuthCookiesToResponse copies the desktop cookie the auth endpoint
+      # sets (by default auth-server cookies are NOT forwarded to the client).
       - "traefik.http.middlewares.desktop-auth.forwardauth.address=http://backend:8000/api/v1/auth/desktop-auth/"
-      - "traefik.http.middlewares.desktop-auth.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.desktop-auth.forwardauth.addAuthCookiesToResponse=dcp_desktop_auth"
       # M6 — friendly fallback for desktop subdomains without an active
       # route: Traefik drops routes for exited containers, so stopped
       # instances and unknown subdomains land here (lowest priority — real

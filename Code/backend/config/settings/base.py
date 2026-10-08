@@ -133,7 +133,12 @@ SESSION_COOKIE_SAMESITE = "Strict"
 # Domain cookie scoped to the platform domain: desktop subdomains
 # (<hash>.<domain>) must share the session with app.localhost for the
 # ForwardAuth session validation (M6, 05_Container_Architecture.md Section 13).
-SESSION_COOKIE_DOMAIN = "." + os.environ.get("TRAEFIK_DOMAIN", "localhost")
+# Browsers REJECT Domain cookies for the single-label "localhost" dev domain,
+# so dev uses the launch-token bridge (services/desktop_auth_tokens.py)
+# instead; only real multi-label domains get the cookie.
+TRAEFIK_DOMAIN = os.environ.get("TRAEFIK_DOMAIN", "localhost")
+if "." in TRAEFIK_DOMAIN:
+    SESSION_COOKIE_DOMAIN = "." + TRAEFIK_DOMAIN
 SESSION_COOKIE_AGE = int(os.environ.get("SESSION_COOKIE_AGE", 60 * 60 * 24 * 7))
 CSRF_COOKIE_SAMESITE = "Strict"
 
@@ -201,9 +206,9 @@ CELERY_IMPORTS = ("tasks.provisioning", "tasks.lifecycle", "tasks.software_insta
 
 # ---------------------------------------------------------------------------
 # Docker Manager configuration (05_Container_Architecture.md)
+# TRAEFIK_DOMAIN is defined with the session settings (M6 desktop access).
 # ---------------------------------------------------------------------------
 DOCKER_HOST = os.environ.get("DOCKER_HOST", "unix:///var/run/docker.sock")
-TRAEFIK_DOMAIN = os.environ.get("TRAEFIK_DOMAIN", "localhost")
 DEFAULT_CPU_LIMIT = os.environ.get("DEFAULT_CPU_LIMIT", "2")
 DEFAULT_MEMORY_LIMIT = os.environ.get("DEFAULT_MEMORY_LIMIT", "2G")
 DEFAULT_AUTO_STOP_MINUTES = int(os.environ.get("DEFAULT_AUTO_STOP", 60))

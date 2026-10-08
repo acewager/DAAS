@@ -9,10 +9,17 @@ Host header and cookies) and decides whether it may proceed:
 - Unauthenticated                        -> 401 friendly sign-in page
 - Authenticated, not the owner           -> 403 friendly access-denied page
 - Owner, instance not RUNNING            -> 409 friendly not-running page
+- Expired launch link                    -> 401 friendly link-expired page
 
 Error responses are friendly HTML pages: they are rendered directly by the
 user's browser (09_User_Experience.md — friendly messages, no technical
 details).
+
+Credentials are resolved from (in order): the ?auth= launch token, the
+desktop cookie set by a previous ForwardAuth on this host, and the Django
+session. Browsers reject Domain cookies for the single-label "localhost" dev
+domain, so the launch token bridges the app session to the desktop subdomain
+in dev; in production the platform-domain session cookie works directly.
 """
 from django.http import HttpResponse
 
@@ -108,6 +115,14 @@ class DesktopAuthView(APIView):
     def get(self, request):
         from django.conf import settings
 
+        from services.desktop_auth_tokens import (
+            DESKTOP_AUTH_COOKIE,
+            DESKTOP_AUTH_COOKIE_AGE,
+            DESKTOP_AUTH_TOKEN_MAX_AGE,
+            issue_token,
+            read_token,
+        )
+
         app_url = getattr(settings, "FRONTEND_URL", "http://app.localhost")
         host = _original_host(request)
         prefix = host.split(".")[0] if host else ""
@@ -119,15 +134,61 @@ class DesktopAuthView(APIView):
                 app_url, "Go to sign in", 401,
             )
 
-        if not request.user.is_authenticated:
+        user_id = None
+        token_hash = None
+
+        # The original request URI (path + query) arrives as X-Forwarded-Uri —
+        # the auth address's query is not the original one. Parse the launch
+        # token from it (falling back to this request's own query params).
+        forwarded_uri = request.META.get("HTTP_X_FORWARDED_URI", "")
+        token = request.query_params.get("auth")
+        if not token and forwarded_uri:
+            from urllib.parse import parse_qs, urlsplit
+            token = parse_qs(urlsplit(forwarded_uri).query).get("auth", [None])[0]
+
+        # 1) ?auth= token from the launch URL — the dev bridge (browsers
+        #    reject Domain cookies for the single-label localhost). Expired
+        #    links get their own friendly page; malformed ones fall through.
+        if token:
+            data = read_token(token, max_age=DESKTOP_AUTH_TOKEN_MAX_AGE)
+            if data is None:
+                return _error_page(
+                    "Link expired",
+                    "This desktop link has expired. Launch it again from your dashboard.",
+                    f"{app_url}/instances", "Back to instances", 401,
+                )
+            user_id, token_hash = data["u"], data["h"]
+
+        # 2) The desktop cookie set by a previous ForwardAuth on this host —
+        #    carries the desktop UI's subsequent requests.
+        if user_id is None:
+            data = read_token(request.COOKIES.get(DESKTOP_AUTH_COOKIE))
+            if data is not None:
+                user_id, token_hash = data["u"], data["h"]
+
+        # 3) The Django session — works in production, where the platform
+        #    domain cookie is accepted by browsers.
+        if user_id is None and request.user.is_authenticated:
+            user_id = str(request.user.id)
+
+        if user_id is None:
             return _error_page(
                 "Sign in required",
                 "Please sign in to the Desktop Cloud Platform to access your desktop.",
                 app_url, "Go to sign in", 401,
             )
 
+        # A token/cookie is bound to one desktop; using it against another
+        # subdomain's host is denied.
+        if token_hash is not None and token_hash[:7].lower() != prefix:
+            return _error_page(
+                "Access denied",
+                "You do not have access to this desktop.",
+                app_url, "Back to dashboard", 403,
+            )
+
         instance = (
-            DesktopInstance.objects.filter(access_hash__istartswith=prefix, user=request.user)
+            DesktopInstance.objects.filter(access_hash__istartswith=prefix, user_id=user_id)
             .exclude(status=InstanceStatus.DELETED)
             .first()
         )
@@ -143,4 +204,17 @@ class DesktopAuthView(APIView):
                 "This desktop is not running right now. Start it from your dashboard and try again.",
                 f"{app_url}/instances", "Back to instances", 409,
             )
-        return Response({"success": True, "message": "Desktop access authorized."})
+
+        # Success — set the host-only cookie for this desktop subdomain so the
+        # desktop UI's subsequent requests skip the token dance. Traefik
+        # forwards the auth response's headers (including Set-Cookie) to the
+        # client, and the cookie is scoped to the requested host.
+        response = Response({"success": True, "message": "Desktop access authorized."})
+        response.set_cookie(
+            DESKTOP_AUTH_COOKIE,
+            issue_token(user_id=user_id, instance_hash=instance.access_hash),
+            max_age=DESKTOP_AUTH_COOKIE_AGE,
+            httponly=True,
+            samesite="Strict",
+        )
+        return response

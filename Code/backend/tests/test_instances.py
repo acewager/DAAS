@@ -82,7 +82,7 @@ def test_launch_returns_url_for_running_owned_instance(settings):
     client = APIClient(); client.force_authenticate(user)
     response = client.get(reverse("instance-launch", kwargs={"instance_id": running.id}))
     assert response.status_code == 200
-    assert response.data["data"]["url"] == f"http://{running.subdomain}"
+    assert response.data["data"]["url"].startswith(f"http://{running.subdomain}/?auth=")
     assert EventLog.objects.filter(actor=user, event_type=EventType.INSTANCE_LAUNCHED).exists()
     # Not running → 409; not owned → 404
     assert client.get(reverse("instance-launch", kwargs={"instance_id": queued.id})).status_code == 409

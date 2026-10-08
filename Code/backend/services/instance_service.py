@@ -28,14 +28,19 @@ class InstanceService:
     @staticmethod
     def launch(*, user, instance_id) -> str:
         """Return the desktop launch URL for a running, user-owned instance
-        (VS-034). Session validation before routing arrives in M6 (Browser
-        Desktop Access); HTTPS hardening is M10."""
+        (VS-034). The URL carries a short-lived signed token (capability
+        link): browsers reject Domain cookies for the single-label localhost
+        dev domain, so the token bridges the app session to the desktop
+        subdomain — the ForwardAuth validates it and sets a host-only cookie
+        for the desktop UI's subsequent requests. HTTPS hardening is M10."""
         instance = InstanceService._get_instance(user=user, instance_id=instance_id)
         if instance.status != InstanceStatus.RUNNING:
             raise Conflict("Instance is not running.")
         record_event(actor=user, event_type=EventType.INSTANCE_LAUNCHED, message="Desktop launch URL generated.", metadata={"instance_id": str(instance.id)})
+        from services.desktop_auth_tokens import issue_token
+        token = issue_token(user_id=user.id, instance_hash=instance.access_hash)
         scheme = "http" if settings.DEBUG else "https"
-        return f"{scheme}://{instance.subdomain}"
+        return f"{scheme}://{instance.subdomain}/?auth={token}"
 
     # -- Container operations (VS-035 through VS-038, Sprint 5) -----------
     # Start/stop/restart are quick Docker calls and run synchronously; the
