@@ -60,6 +60,17 @@ The user reported the Launch button "did nothing". Root cause and fixes:
 4. **Verified in a real browser session:** register → new instance form → provisioning → Launch click navigated to the instance's hash subdomain. Note: the automation browser's proxy cannot resolve wildcard-`localhost` subdomains (502 from its gateway — sandbox artifact; the same URLs return 200 from the server and from inside the Traefik network, and on a real Linux host `*.localhost` resolves to loopback via systemd-resolved).
 5. `scripts/init_dev.sh` polished into the maintained one-command startup: creates `.env`, verifies Docker, builds, waits for postgres+redis health, migrates, seeds templates, starts the full stack, waits for the health endpoint, and warns about missing `/etc/hosts` entries.
 
+## Session/cookie fixes (2026-10-09, user-reported)
+
+The user reported: the Django admin login flashes back to the login page, the app login leaves the session broken (templates not loading, Launch denied, logout requiring a refresh). Root cause and fixes:
+
+1. **`Domain=.localhost` cookies are rejected by browsers (root cause, fixed):** the platform-domain session cookie (set for the single-label `localhost` dev domain) was rejected by the user's browser — the login POST succeeded and the UI updated from the response, but no session cookie was stored, so every subsequent API call was unauthenticated. `SESSION_COOKIE_DOMAIN` is now only set for real multi-label domains (production); dev uses host-only cookies.
+2. **Launch-token bridge (fixed):** with host-only cookies the session never reaches desktop subdomains. The launch URL now carries a short-lived signed token (capability link, 5-minute expiry, `services/desktop_auth_tokens.py`); the ForwardAuth validates it and — via Traefik's `addAuthCookiesToResponse` — sets a host-only `dcp_desktop_auth` cookie for the desktop subdomain so the desktop UI's subsequent requests pass without the token.
+3. **`X-Forwarded-Uri` (fixed):** Traefik's ForwardAuth does not append the original query to the auth address; the original request URI arrives as `X-Forwarded-Uri`. The endpoint parses the token from it.
+4. **Resilient logout (fixed):** `signOut` clears the local state first and treats a failed server-side call as logged-out — the UI no longer needs a refresh.
+5. **Stale-cookie diagnosis:** browsers hold stale `Domain=.localhost` session cookies (from earlier logins, pointing to purged sessions of removed test users); Django keeps the LAST sessionid in the Cookie header. Stale sessions were purged; users re-login and receive fresh host-only cookies.
+6. Runtime verification: launch → token URL → ForwardAuth 200 + desktop cookie set → follow-up with cookie only → 200; the Django admin login/logout cycle and the app login/templates/launch/logout verified in a real browser session; 50 tests passing.
+
 ## M5 container operations evidence (Sprint 5)
 
 1. `DockerManager.start_container`/`stop_container`/`restart_container`/`delete_container` implemented (replacing the Sprint 0 stubs); `delete_container` tolerates already-removed containers and retains the persistent volume by default (Retain/Delete data option is Sprint 6, VS-043).
@@ -87,7 +98,7 @@ The user reported the Launch button "did nothing". Root cause and fixes:
 3. Traefik: the `desktop-auth` ForwardAuth middleware defined once on the backend service (`trustForwardHeader=true`); desktop container routers reference `desktop-auth@docker` (label asserted in tests).
 4. Friendly fallback: Traefik drops routes for exited containers, so stopped instances and unknown subdomains never reach the ForwardAuth — a lowest-priority `desktop-fallback` router (`Host(`*.<domain>`)`, v3 wildcard syntax; the v2 `{name: regexp}` placeholder syntax does not work in v3) routes them to the backend's `desktop_fallback` catch-all view, which serves the friendly not-running page (409) for known instances and a friendly not-found page (404) otherwise. `ALLOWED_HOSTS` gained `.<TRAEFIK_DOMAIN>` so the fallback can serve any subdomain host.
 5. `generate_access_hash` regenerates until the first character is alphanumeric (token_urlsafe can start with `-`/`_`, invalid as a leading DNS label).
-6. Tests: `test_desktop_auth.py` (8 tests) covering all ForwardAuth outcomes, platform-host denial, port/mixed-case host resolution, and both fallback pages; 38 tests passing total.
+6. Tests: `test_desktop_auth.py` (8 tests) covering all ForwardAuth outcomes, platform-host denial, port/mixed-case host resolution, and both fallback pages; 50 tests passing total (including the launch-token bridge, the desktop-cookie path, and token-binding denial).
 7. Runtime verification through the real Traefik: owner + RUNNING → 200 (desktop UI served); no session → 401 sign-in page; another user → 403 access-denied page (acceptance criterion "Unauthorized users cannot access another user's desktop"); stopped instance → 409 not-running page via the fallback; unknown subdomain → 404 friendly page; app.localhost and the API health endpoint unaffected.
 
 ## M7 software request workflow evidence (Sprint 7)
