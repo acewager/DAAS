@@ -112,6 +112,19 @@ The user reported: the Django admin login flashes back to the login page, the ap
 7. Tests: `test_software_requests.py` (8 tests) covering submission ownership + validation, list scoping, admin filters, approve/reject guards, and the installation task success/failure paths; 46 tests passing total.
 8. Runtime verification: full lifecycle live — user request (PENDING) → admin approval (APPROVED with reviewer recorded) → Celery installed `htop` into the real container (`/usr/bin/htop` present) → INSTALLED; events recorded end-to-end.
 
+## M8/M9 administration evidence (Sprint 8)
+
+1. Admin-only endpoints per 07_REST_API.md Section 14, wired in `api/admin_urls.py` at `/api/v1/admin/` with `IsAdminRole` enforcement (403 for regular users):
+   - `GET /admin/users/` (VS-050): the user list with instance counts, `?search=` (username/email), `?role=`, and pagination; `GET/PATCH /admin/users/{id}/` — role changes require SUPER_ADMIN, activation changes any admin, and nobody can change their own account.
+   - `GET /admin/instances/` (VS-051): all users' instances with `?status=`/`?search=` and pagination; the instance lifecycle actions now scope through `_actor_scope` — admins act on any instance.
+   - `GET /admin/events/` (VS-052): the platform event log with `?event_type=`/`?search=` and pagination; the event serializer gained `actor_name`.
+   - `GET /admin/analytics/` (VS-053): platform analytics — user/instance/software-request statistics and recent activity.
+   - `GET /admin/health/` (VS-057): system health with database, Redis, and Docker checks (docker via `DockerManager.ping`).
+2. Shared pagination helper (`api/pagination.py`, 07_REST_API.md Section 15): `?page`/`?page_size` (default 20, max 100).
+3. Frontend: the admin dashboard (`/admin` — platform stats, system health panel, recent activity, quick links), user management (search, role dropdowns, activation toggles), instance management (filters + admin actions on any instance), and the event log viewer; the nav gains an Admin section for admins.
+4. Tests: `test_admin.py` (8 tests) covering admin-only enforcement, search/role/status filters, pagination, the super-admin role rule, the self-change guard, admin instance actions, and the health checks; 58 tests passing total.
+5. Runtime verification: all admin endpoints verified live with the admin session (analytics: 4 users/6 instances; health: database/redis/docker all healthy; users/instances/events paginated; unauthenticated → 403); the admin dashboard rendered in a real browser session (System health, Pending requests, Users).
+
 ## Automation
 
 `.github/workflows/ci.yml` prevents regressions by running Django migration checks, migrations, and pytest against PostgreSQL and Redis, plus a clean frontend dependency install and production build for pull requests and pushes to `main`.

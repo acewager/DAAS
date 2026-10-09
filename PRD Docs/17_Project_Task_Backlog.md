@@ -542,11 +542,13 @@ Status: Done
 
 # Sprint 8 – Administration
 
-Status: Not Started
+Status: Done
 
 ## VS-049
 
 Admin dashboard
+
+Status: Done
 
 ---
 
@@ -554,11 +556,15 @@ Admin dashboard
 
 User management
 
+Status: Done
+
 ---
 
 ## VS-051
 
 Instance management
+
+Status: Done
 
 ---
 
@@ -566,17 +572,21 @@ Instance management
 
 Event Log viewer
 
+Status: Done
+
 ---
 
 ## VS-053
 
 Analytics dashboard
 
+Status: Done
+
 ---
 
 # Sprint 9 – Analytics
 
-Status: Not Started
+Status: In Progress
 
 ## VS-054
 
@@ -599,6 +609,8 @@ Charts
 ## VS-057
 
 Health page
+
+Status: Done
 
 ---
 

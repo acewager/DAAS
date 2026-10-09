@@ -7,16 +7,15 @@ noVNC. See the full specification in the project documentation
 
 ## Status
 
-**Milestone M7 — Software Request Workflow complete** (`01D_Development_Roadmap.md`,
-`17_Project_Task_Backlog.md`).
+**Milestones M8 — Analytics & Event Logging and M9 — Administration Portal
+complete** (`01D_Development_Roadmap.md`, `17_Project_Task_Backlog.md`).
+M10 — Production Deployment remains; Sprint 9's usage collection,
+aggregation, and charts are the remaining analytics enhancement.
 
-Project foundation (VS-001 through VS-008), authentication (VS-009 through
-VS-017 baseline + rate-limiting/role checks), template management
-(VS-018 through VS-021), instance provisioning (VS-022 through VS-029,
-VS-026 subdomains), the user dashboard (VS-030 through VS-034), container
-operations (VS-035 through VS-040), persistence (VS-041 through VS-043),
-browser desktop access (session validation + friendly error pages), and
-the software request workflow (VS-044 through VS-048) are implemented:
+Project foundation, authentication, template management, instance
+provisioning, the user dashboard, container operations, persistence,
+browser desktop access, the software request workflow, and administration
+(VS-001 through VS-053, VS-057) are implemented:
 
 | Slice  | Deliverable                        | Status |
 |--------|-------------------------------------|--------|
@@ -65,6 +64,12 @@ the software request workflow (VS-044 through VS-048) are implemented:
 | VS-046 | Admin approval page                  | Done |
 | VS-047 | Celery installation task             | Done |
 | VS-048 | Status tracking                      | Done |
+| VS-049 | Admin dashboard                      | Done |
+| VS-050 | User management                      | Done |
+| VS-051 | Instance management                  | Done |
+| VS-052 | Event Log viewer                     | Done |
+| VS-053 | Analytics dashboard                  | Done |
+| VS-057 | Health page                          | Done |
 
 Authentication includes registration, session login/logout, role checks,
 profile management, password reset, throttling, audit events, and regression
@@ -92,7 +97,13 @@ instances and unknown subdomains. The software request workflow adds
 `POST/GET /api/v1/software-requests` with admin-only approve/reject
 endpoints, a strictly validated package name (no shell metacharacters),
 a Celery installation task (`apt-get` inside the target container), the
-user's request history page, and the admin approval page. See
+user's request history page, and the admin approval page. Administration
+adds the admin-only endpoints (`/api/v1/admin/users`, `/admin/instances/`,
+`/admin/events/`, `/admin/analytics/`, `/admin/health/` with search,
+status, role filters, and pagination), admin management of any instance,
+role/activation management (super-admin-only role changes), the admin
+dashboard (platform stats + system health for database/redis/docker),
+and the event log viewer. See
 [`Code/docs/MILESTONE_READINESS_AUDIT.md`](Code/docs/MILESTONE_READINESS_AUDIT.md).
 
 ## Stack
@@ -185,7 +196,7 @@ Section 5.
 
 ## Next Up
 
-**Sprint 8 — Administration** (`17_Project_Task_Backlog.md`, VS-049
-onward): admin dashboard, user management, instance management, event log
-viewer, and the analytics dashboard. Next milestone after that is M8 —
-Analytics & Event Logging.
+**Remaining analytics (Sprint 9, VS-054/055/056)**: usage collection from
+containers, background aggregation, and charts. Then **M10 — Production
+Deployment** (Sprint 10, VS-058 onward): production configuration, HTTPS,
+backups, monitoring, and disaster recovery documentation.
