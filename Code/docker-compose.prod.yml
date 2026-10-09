@@ -1,0 +1,134 @@
+# Production environment (M10 — Production Deployment).
+# Per 12_Deployment.md: HTTPS via Traefik/Let's Encrypt, gunicorn, no dev
+# conveniences (no code mounts, no exposed database/redis, no dashboard).
+#
+# Usage:
+#   cp .env .env.production   # configure TRAEFIK_DOMAIN, ACME_EMAIL,
+#                             # strong SECRET_KEY, DEBUG=False
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+#
+# Desktop containers are created dynamically by DockerManager (M4) and
+# inherit TLS via the platform domain.
+
+networks:
+  dcp-network:
+    name: dcp-network
+
+volumes:
+  postgres-data:
+  redis-data:
+  letsencrypt:
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dcp}
+      POSTGRES_USER: ${POSTGRES_USER:-dcp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set a strong password}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dcp}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dcp-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dcp-network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      args:
+        REQUIREMENTS_FILE: requirements/production.txt
+    command: sh -c "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
+    env_file: .env.production
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.production
+    # VS-062: no source-code mount in production — the baked image only.
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - dcp-network
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`${TRAEFIK_DOMAIN}`) && PathPrefix(`/api/`)"
+      - "traefik.http.routers.backend.service=backend"
+      - "traefik.http.routers.backend-django.rule=Host(`${TRAEFIK_DOMAIN}`) && PathPrefix(`/admin/`)"
+      - "traefik.http.routers.backend-django.service=backend"
+      # M6: session validation before routing desktop traffic.
+      - "traefik.http.middlewares.desktop-auth.forwardauth.address=http://backend:8000/api/v1/auth/desktop-auth/"
+      - "traefik.http.middlewares.desktop-auth.forwardauth.addAuthCookiesToResponse=dcp_desktop_auth"
+      # M6: friendly fallback for desktop subdomains without an active route.
+      - "traefik.http.routers.desktop-fallback.rule=Host(`*.${TRAEFIK_DOMAIN}`)"
+      - "traefik.http.routers.desktop-fallback.priority=1"
+      - "traefik.http.routers.desktop-fallback.service=backend"
+
+  celery:
+    build:
+      context: ./backend
+      args:
+        REQUIREMENTS_FILE: requirements/production.txt
+    command: celery -A config worker -l info --beat
+    env_file: .env.production
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - dcp-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_URL: /api/v1
+    networks:
+      - dcp-network
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`${TRAEFIK_DOMAIN}`)"
+      - "traefik.http.routers.frontend.service=frontend"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+
+  traefik:
+    image: traefik:v3.7
+    command:
+      - "--configFile=/etc/traefik/traefik.prod.yml"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/traefik/traefik.prod.yml:/etc/traefik/traefik.prod.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt:/letsencrypt
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL:?set an ACME email for certificates}
+    networks:
+      - dcp-network
+    restart: unless-stopped

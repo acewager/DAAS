@@ -28,6 +28,12 @@ class InstanceStatus(models.TextChoices):
 
 
 class DesktopInstance(TimeStampedModel):
+    class Meta:
+        indexes = [
+            models.Index(fields=["user", "status"]),
+            models.Index(fields=["status", "created_at"]),
+        ]
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="instances")
     template = models.ForeignKey("templates.DesktopTemplate", on_delete=models.PROTECT, related_name="instances")
     name = models.CharField(max_length=120)

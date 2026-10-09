@@ -17,3 +17,6 @@ providers:
 
 log:
   level: INFO
+
+# VS-058: access logs for monitoring (stdout, collected by Docker).
+accessLog: {}

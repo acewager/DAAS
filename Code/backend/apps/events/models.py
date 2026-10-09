@@ -49,6 +49,11 @@ class EventLog(TimeStampedModel):
 
 	class Meta:
 		ordering = ["-created_at"]
+		indexes = [
+			models.Index(fields=["created_at"]),
+			models.Index(fields=["event_type", "created_at"]),
+			models.Index(fields=["actor", "created_at"]),
+		]
 
 	def __str__(self) -> str:
 		return f"{self.event_type}: {self.message}"

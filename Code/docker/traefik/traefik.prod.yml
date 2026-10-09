@@ -1,0 +1,38 @@
+# Production Traefik configuration (M10): HTTPS with Let's Encrypt, no
+# insecure dashboard. Per 12_Deployment.md and ADR-005.
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: ":443"
+    http:
+      tls:
+        certResolver: letsencrypt
+
+providers:
+  docker:
+    exposedByDefault: false
+    network: dcp-network
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      # Set ACME_EMAIL in the environment; certificates for the platform
+      # domain and its desktop subdomains (the wildcard needs a DNS-01
+      # challenge — per-desktop certificates use the HTTP-01 challenge).
+      email: "${ACME_EMAIL}"
+      storage: /letsencrypt/acme.json
+      httpChallenge:
+        entryPoint: web
+
+api:
+  dashboard: false # never expose the dashboard in production (ADR-005)
+
+log:
+  level: INFO
+accessLog: {}

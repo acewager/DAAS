@@ -48,6 +48,10 @@ class SoftwareRequest(TimeStampedModel):
 
 	class Meta:
 		ordering = ["-created_at"]
+		indexes = [
+			models.Index(fields=["instance", "created_at"]),
+			models.Index(fields=["status", "created_at"]),
+		]
 
 	def __str__(self) -> str:
 		return f"{self.software_name} ({self.status}) for instance {self.instance_id}"
