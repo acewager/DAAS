@@ -24,9 +24,11 @@ interface InstanceActionsProps {
 export default function InstanceActions({ instanceId, status, instanceName = "this instance", persistent = false }: InstanceActionsProps) {
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(false);
+  // An instance state change touches every list/dashboard/analytics query
+  // (including the admin views) — invalidate all so the new state (e.g.
+  // DELETING, then DELETED) shows immediately instead of on the next poll.
   const invalidate = () => {
-    void queryClient.invalidateQueries({ queryKey: ["instances"] });
-    void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    void queryClient.invalidateQueries();
   };
 
   const start = useMutation({ mutationFn: startInstance, onSuccess: invalidate });

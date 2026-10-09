@@ -71,6 +71,14 @@ The user reported: the Django admin login flashes back to the login page, the ap
 5. **Stale-cookie diagnosis:** browsers hold stale `Domain=.localhost` session cookies (from earlier logins, pointing to purged sessions of removed test users); Django keeps the LAST sessionid in the Cookie header. Stale sessions were purged; users re-login and receive fresh host-only cookies.
 6. Runtime verification: launch → token URL → ForwardAuth 200 + desktop cookie set → follow-up with cookie only → 200; the Django admin login/logout cycle and the app login/templates/launch/logout verified in a real browser session; 50 tests passing.
 
+## Instance-actions invalidation fix (2026-10-09, user-reported)
+
+The user reported that deleting an instance from the admin instances page kept showing RUNNING until it became DELETED, with the DELETING state never visible. Findings:
+
+1. `InstanceActions` invalidated only the `["instances"]` and `["dashboard"]` queries after the 202 — the admin page's `["admin-instances"]` query was not refreshed and had to wait for its 10-second poll. Fixed: actions now call `queryClient.invalidateQueries()` (all queries) — an instance state change touches the user lists, dashboards, admin lists, analytics counts, and the event log anyway.
+2. The DELETING intermediate state is inherently near-instant: the event timeline shows `INSTANCE_DELETE_REQUESTED` and `INSTANCE_DELETED` in the same second (the Celery container+volume removal completes in <1s). Seeing RUNNING → DELETED without a visible DELETING state is expected behavior; the immediate invalidation ensures the freshest state shows as soon as the 202 lands.
+3. 58 tests passing.
+
 ## M5 container operations evidence (Sprint 5)
 
 1. `DockerManager.start_container`/`stop_container`/`restart_container`/`delete_container` implemented (replacing the Sprint 0 stubs); `delete_container` tolerates already-removed containers and retains the persistent volume by default (Retain/Delete data option is Sprint 6, VS-043).
