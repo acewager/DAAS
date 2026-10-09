@@ -28,3 +28,6 @@ volumes/
 
 # Logs
 *.log
+
+# Backups (scripts/backup.sh output — never committed)
+backups/
