@@ -7,15 +7,15 @@ noVNC. See the full specification in the project documentation
 
 ## Status
 
-**Milestones M8 — Analytics & Event Logging and M9 — Administration Portal
-complete** (`01D_Development_Roadmap.md`, `17_Project_Task_Backlog.md`).
-M10 — Production Deployment remains; Sprint 9's usage collection,
-aggregation, and charts are the remaining analytics enhancement.
+**Milestones M1 through M9 complete; Sprint 9 (usage analytics) done**
+(`01D_Development_Roadmap.md`, `17_Project_Task_Backlog.md`).
+**M10 — Production Deployment is the final remaining milestone** (Sprint 10,
+VS-058 onward).
 
 Project foundation, authentication, template management, instance
 provisioning, the user dashboard, container operations, persistence,
-browser desktop access, the software request workflow, and administration
-(VS-001 through VS-053, VS-057) are implemented:
+browser desktop access, the software request workflow, administration, and
+usage analytics (VS-001 through VS-057) are implemented:
 
 | Slice  | Deliverable                        | Status |
 |--------|-------------------------------------|--------|
@@ -70,6 +70,9 @@ browser desktop access, the software request workflow, and administration
 | VS-052 | Event Log viewer                     | Done |
 | VS-053 | Analytics dashboard                  | Done |
 | VS-057 | Health page                          | Done |
+| VS-054 | Usage collection                     | Done |
+| VS-055 | Background aggregation               | Done |
+| VS-056 | Charts                               | Done |
 
 Authentication includes registration, session login/logout, role checks,
 profile management, password reset, throttling, audit events, and regression
@@ -103,7 +106,10 @@ adds the admin-only endpoints (`/api/v1/admin/users`, `/admin/instances/`,
 status, role filters, and pagination), admin management of any instance,
 role/activation management (super-admin-only role changes), the admin
 dashboard (platform stats + system health for database/redis/docker),
-and the event log viewer. See
+and the event log viewer. Usage analytics adds the `Analytics` model,
+Docker stats sampling with a Celery beat aggregation sweep every 60s
+(`/api/v1/analytics/instances/{id}`, ownership-scoped), and dependency-free
+CSS usage charts on the instance cards. See
 [`Code/docs/MILESTONE_READINESS_AUDIT.md`](Code/docs/MILESTONE_READINESS_AUDIT.md).
 
 ## Stack
@@ -196,7 +202,7 @@ Section 5.
 
 ## Next Up
 
-**Remaining analytics (Sprint 9, VS-054/055/056)**: usage collection from
-containers, background aggregation, and charts. Then **M10 — Production
-Deployment** (Sprint 10, VS-058 onward): production configuration, HTTPS,
-backups, monitoring, and disaster recovery documentation.
+**M10 — Production Deployment** (Sprint 10, VS-058 onward): production
+configuration, HTTPS, Traefik TLS, automated backups, monitoring, logging,
+disaster recovery documentation, security/performance review, full
+regression, and the release candidate.

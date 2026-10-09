@@ -586,11 +586,13 @@ Status: Done
 
 # Sprint 9 – Analytics
 
-Status: In Progress
+Status: Done
 
 ## VS-054
 
 Usage collection
+
+Status: Done
 
 ---
 
@@ -598,11 +600,15 @@ Usage collection
 
 Background aggregation
 
+Status: Done
+
 ---
 
 ## VS-056
 
 Charts
+
+Status: Done
 
 ---
 

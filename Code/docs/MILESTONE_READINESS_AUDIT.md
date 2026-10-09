@@ -133,6 +133,17 @@ The user reported that deleting an instance from the admin instances page kept s
 4. Tests: `test_admin.py` (8 tests) covering admin-only enforcement, search/role/status filters, pagination, the super-admin role rule, the self-change guard, admin instance actions, and the health checks; 58 tests passing total.
 5. Runtime verification: all admin endpoints verified live with the admin session (analytics: 4 users/6 instances; health: database/redis/docker all healthy; users/instances/events paginated; unauthenticated → 403); the admin dashboard rendered in a real browser session (System health, Pending requests, Users).
 
+## Sprint 9 usage analytics evidence
+
+1. `Analytics` model per 03_Database_Design.md #analytics (instance OneToOne, cpu_average, ram_average, uptime_seconds, last_calculated) with migration.
+2. VS-054: `DockerManager.container_usage` — Docker stats sampling (CPU% across the CPU limit via usage/system deltas, RAM MB excluding inactive file cache); best-effort (None when the container is gone or not reporting).
+3. VS-055: `AnalyticsService.sample_instance` — the first sample sets the value, later samples smooth toward it; `dcp.aggregate_usage` (Celery beat, every 60s) samples all RUNNING instances; uptime tracked as seconds since the last state change.
+4. `GET /api/v1/analytics/instances/{id}` (07_REST_API.md Section 12): ownership-scoped (admins any), zeros without analytics.
+5. VS-056: dependency-free CSS `UsageBar` charts (CPU% of the limit, RAM% of the limit, color-coded thresholds) on the instance cards; uptime in the instance metadata.
+6. Tests: `test_analytics.py` (4 tests) covering sampling + smoothing, missing-container skips, RUNNING-only aggregation, and usage-endpoint scoping; 62 tests passing.
+7. Runtime verification: the usage endpoint returned real container stats (cpu 0.55%, ram 485 MB, uptime 300s) and the beat sweep updated it every 60s (uptime 300 → 360 across two reads).
+
+
 ## Automation
 
 `.github/workflows/ci.yml` prevents regressions by running Django migration checks, migrations, and pytest against PostgreSQL and Redis, plus a clean frontend dependency install and production build for pull requests and pushes to `main`.
