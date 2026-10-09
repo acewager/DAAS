@@ -78,3 +78,18 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         if attrs["password"] != attrs["confirm_password"]:
             raise serializers.ValidationError({"confirm_password": "Passwords do not match."})
         return attrs
+
+
+class AdminUserSerializer(serializers.ModelSerializer):
+    instance_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = ("id", "username", "email", "role", "is_active", "date_joined", "instance_count")
+        read_only_fields = fields
+
+
+class AdminUserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("role", "is_active")

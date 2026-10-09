@@ -26,6 +26,14 @@ class InstanceService:
         return get_object_or_404(DesktopInstance, pk=instance_id, user=user)
 
     @staticmethod
+    def _actor_scope(actor):
+        """Admins manage any instance; regular users only their own (VS-051)."""
+        from apps.accounts.models import UserRole
+        if actor is not None and (actor.role == UserRole.ADMIN or actor.role == UserRole.SUPER_ADMIN or getattr(actor, "is_superuser", False)):
+            return None
+        return actor
+
+    @staticmethod
     def launch(*, user, instance_id) -> str:
         """Return the desktop launch URL for a running, user-owned instance
         (VS-034). The URL carries a short-lived signed token (capability
@@ -49,7 +57,7 @@ class InstanceService:
 
     @staticmethod
     def start(*, instance_id, actor=None):
-        instance = InstanceService._get_instance(user=actor, instance_id=instance_id)
+        instance = InstanceService._get_instance(user=InstanceService._actor_scope(actor), instance_id=instance_id)
         if instance.status != InstanceStatus.STOPPED:
             raise Conflict("Only stopped instances can be started.")
         try:
@@ -68,7 +76,7 @@ class InstanceService:
 
     @staticmethod
     def stop(*, instance_id, actor=None):
-        instance = InstanceService._get_instance(user=actor, instance_id=instance_id)
+        instance = InstanceService._get_instance(user=InstanceService._actor_scope(actor), instance_id=instance_id)
         if instance.status != InstanceStatus.RUNNING:
             raise Conflict("Only running instances can be stopped.")
         try:
@@ -83,7 +91,7 @@ class InstanceService:
 
     @staticmethod
     def restart(*, instance_id, actor=None):
-        instance = InstanceService._get_instance(user=actor, instance_id=instance_id)
+        instance = InstanceService._get_instance(user=InstanceService._actor_scope(actor), instance_id=instance_id)
         if instance.status != InstanceStatus.RUNNING:
             raise Conflict("Only running instances can be restarted.")
         try:
@@ -101,7 +109,7 @@ class InstanceService:
         """Queue asynchronous deletion of a user-owned instance (VS-038).
         With delete_data the persistent volume is removed too (VS-043);
         by default the data is retained (Sprint 6)."""
-        instance = InstanceService._get_instance(user=actor, instance_id=instance_id)
+        instance = InstanceService._get_instance(user=InstanceService._actor_scope(actor), instance_id=instance_id)
         if instance.status not in (InstanceStatus.RUNNING, InstanceStatus.STOPPED, InstanceStatus.FAILED):
             raise Conflict("Instance cannot be deleted in its current state.")
         instance.status = InstanceStatus.DELETING

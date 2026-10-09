@@ -1,5 +1,6 @@
 """Authentication API views."""
-from django.contrib.auth import login, logout
+from django.contrib.auth import get_user_model, login, logout
+from django.db.models import Q
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -9,8 +10,12 @@ from rest_framework.views import APIView
 
 from services.authentication import AuthenticationService
 
+from .models import UserRole
+from .permissions import IsAdminRole
 from .throttles import LoginRateThrottle, PasswordResetRateThrottle, RegisterRateThrottle
 from .serializers import LoginSerializer, PasswordResetConfirmSerializer, PasswordResetRequestSerializer, ProfileSerializer, RegisterSerializer, UserSerializer
+
+User = get_user_model()
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -135,3 +140,60 @@ class PasswordResetConfirmView(APIView):
         ):
             raise ValidationError({"token": "This reset link is invalid or has expired."})
         return Response({"success": True, "message": "Password reset successfully.", "data": {}})
+
+
+class AdminUserListView(APIView):
+    """GET /api/v1/admin/users/ — user management list (VS-050, Admin Only).
+    Supports ?search= (username/email), ?role=, and pagination."""
+
+    permission_classes = [IsAdminRole]
+
+    def get(self, request):
+        from django.db.models import Count
+
+        from api.pagination import pagination_meta, paginate
+        from .serializers import AdminUserSerializer
+
+        users = User.objects.annotate(instance_count=Count("instances")).order_by("-date_joined")
+        search = request.query_params.get("search", "").strip()
+        if search:
+            users = users.filter(Q(username__icontains=search) | Q(email__icontains=search))
+        role = request.query_params.get("role", "").upper()
+        if role in UserRole.values:
+            users = users.filter(role=role)
+        page, page_size = paginate(request)
+        total = users.count()
+        data = [AdminUserSerializer(u).data for u in users[(page - 1) * page_size : page * page_size]]
+        return Response({"success": True, "message": "Users retrieved successfully.", "data": {"users": data, "pagination": pagination_meta(total, page, page_size)}})
+
+
+class AdminUserDetailView(APIView):
+    """GET/PATCH /api/v1/admin/users/{id}/ — manage a user without database
+    access. Role changes require SUPER_ADMIN; activation changes require any
+    admin; admins cannot change their own account."""
+
+    permission_classes = [IsAdminRole]
+
+    def get(self, request, user_id):
+        from django.shortcuts import get_object_or_404
+
+        from .serializers import AdminUserSerializer
+
+        user = get_object_or_404(User, pk=user_id)
+        return Response({"success": True, "message": "User retrieved successfully.", "data": {"user": AdminUserSerializer(user).data}})
+
+    def patch(self, request, user_id):
+        from django.shortcuts import get_object_or_404
+        from rest_framework.exceptions import ValidationError
+
+        from .serializers import AdminUserSerializer, AdminUserUpdateSerializer
+
+        user = get_object_or_404(User, pk=user_id)
+        if user.id == request.user.id:
+            raise ValidationError("Admins cannot change their own role or activation.")
+        serializer = AdminUserUpdateSerializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        if "role" in serializer.validated_data and request.user.role != UserRole.SUPER_ADMIN:
+            raise ValidationError("Only super admins can change roles.")
+        serializer.save()
+        return Response({"success": True, "message": "User updated successfully.", "data": {"user": AdminUserSerializer(user).data}})

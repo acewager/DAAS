@@ -33,3 +33,11 @@ class InstanceOrderSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         raise NotImplementedError
+
+
+class AdminInstanceSerializer(InstanceSerializer):
+    username = serializers.CharField(source="user.username", read_only=True)
+
+    class Meta(InstanceSerializer.Meta):
+        fields = InstanceSerializer.Meta.fields + ("username", "container_name", "container_id")
+        read_only_fields = fields

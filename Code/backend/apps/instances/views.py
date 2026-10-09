@@ -2,6 +2,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.permissions import IsAdminRole
 from services.instance_service import InstanceService
 
 from .models import DesktopInstance
@@ -75,3 +76,28 @@ class InstanceDeleteView(APIView):
         delete_data = str(request.query_params.get("delete_data", "")).lower() == "true"
         instance = InstanceService.delete(instance_id=instance_id, actor=request.user, delete_data=delete_data)
         return Response({"success": True, "message": "Instance deletion queued.", "data": {"instance": InstanceSerializer(instance).data}}, status=202)
+
+
+class AdminInstanceListView(APIView):
+    """GET /api/v1/admin/instances/ — all instances (VS-051, Admin Only).
+    Supports ?status=, ?search= (name/username), and pagination."""
+
+    permission_classes = [IsAdminRole]
+
+    def get(self, request):
+        from django.db.models import Q
+
+        from api.pagination import pagination_meta, paginate
+
+        instances = DesktopInstance.objects.select_related("user", "template").order_by("-created_at")
+        status_filter = request.query_params.get("status", "").upper()
+        if status_filter:
+            instances = instances.filter(status=status_filter)
+        search = request.query_params.get("search", "").strip()
+        if search:
+            instances = instances.filter(Q(name__icontains=search) | Q(user__username__icontains=search))
+        page, page_size = paginate(request)
+        total = instances.count()
+        from .serializers import AdminInstanceSerializer
+        data = [AdminInstanceSerializer(i).data for i in instances[(page - 1) * page_size : page * page_size]]
+        return Response({"success": True, "message": "Instances retrieved successfully.", "data": {"instances": data, "pagination": pagination_meta(total, page, page_size)}})

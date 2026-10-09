@@ -13,6 +13,10 @@ import NewInstancePage from "@/pages/NewInstancePage";
 import InstancesPage from "@/pages/InstancesPage";
 import SoftwareRequestsPage from "@/pages/SoftwareRequestsPage";
 import AdminRequestsPage from "@/pages/AdminRequestsPage";
+import AdminDashboardPage from "@/pages/AdminDashboardPage";
+import AdminUsersPage from "@/pages/AdminUsersPage";
+import AdminInstancesPage from "@/pages/AdminInstancesPage";
+import AdminEventsPage from "@/pages/AdminEventsPage";
 
 /**
  * Route table per 08_Frontend_Architecture.md Section 6.
@@ -41,7 +45,11 @@ export default function AppRoutes() {
           <Route path="/instances" element={<InstancesPage />} />
           <Route path="/instances/new" element={<NewInstancePage />} />
           <Route path="/software-requests" element={<SoftwareRequestsPage />} />
+          <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="/admin/requests" element={<AdminRequestsPage />} />
+          <Route path="/admin/users" element={<AdminUsersPage />} />
+          <Route path="/admin/instances" element={<AdminInstancesPage />} />
+          <Route path="/admin/events" element={<AdminEventsPage />} />
         </Route>
       </Routes>
     </AuthProvider>
