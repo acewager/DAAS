@@ -109,7 +109,7 @@ The MVP is divided into the following milestones.
 | M7 | Software Request Workflow | Done |
 | M8 | Analytics & Event Logging | Done |
 | M9 | Administration Portal | Done |
-| M10 | Production Deployment | Planned |
+| M10 | Production Deployment | Done |
 
 ---
 

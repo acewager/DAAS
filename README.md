@@ -7,15 +7,15 @@ noVNC. See the full specification in the project documentation
 
 ## Status
 
-**Milestones M1 through M9 complete; Sprint 9 (usage analytics) done**
+**MVP COMPLETE — all milestones M1 through M10 done (v1.0.0)**
 (`01D_Development_Roadmap.md`, `17_Project_Task_Backlog.md`).
-**M10 — Production Deployment is the final remaining milestone** (Sprint 10,
-VS-058 onward).
 
 Project foundation, authentication, template management, instance
 provisioning, the user dashboard, container operations, persistence,
 browser desktop access, the software request workflow, administration, and
-usage analytics (VS-001 through VS-057) are implemented:
+usage analytics (VS-001 through VS-066) are implemented; production
+readiness (HTTPS, backups, monitoring, disaster recovery) is documented in
+[`Code/deployment/README.md`](Code/deployment/README.md).
 
 | Slice  | Deliverable                        | Status |
 |--------|-------------------------------------|--------|
@@ -73,6 +73,15 @@ usage analytics (VS-001 through VS-057) are implemented:
 | VS-054 | Usage collection                     | Done |
 | VS-055 | Background aggregation               | Done |
 | VS-056 | Charts                               | Done |
+| VS-058 | Logging improvements                 | Done |
+| VS-059 | Backup automation                    | Done |
+| VS-060 | Restore procedure                    | Done |
+| VS-061 | Security review                      | Done |
+| VS-062 | Performance review (DB indexes)      | Done |
+| VS-063 | Full regression tests                | Done |
+| VS-064 | Deployment verification              | Done |
+| VS-065 | Documentation review                 | Done |
+| VS-066 | Release candidate (v1.0.0)           | Done |
 
 Authentication includes registration, session login/logout, role checks,
 profile management, password reset, throttling, audit events, and regression
@@ -202,7 +211,6 @@ Section 5.
 
 ## Next Up
 
-**M10 — Production Deployment** (Sprint 10, VS-058 onward): production
-configuration, HTTPS, Traefik TLS, automated backups, monitoring, logging,
-disaster recovery documentation, security/performance review, full
-regression, and the release candidate.
+**Post-MVP** (`22_Future_Roadmap.md`): version 1.1 quality improvements
+(better analytics, enhanced monitoring, performance optimizations), then
+version 1.2 (advanced template management, software catalog) and beyond.

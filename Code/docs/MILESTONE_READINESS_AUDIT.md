@@ -17,11 +17,12 @@ are available as of this audit — see the verification log at the bottom).
 | M5 — Instance Dashboard | Done | Dashboard slice (Sprint 4): `GET /api/v1/analytics/dashboard` per-user statistics backed by `DashboardService` (VS-030), `GET /api/v1/events` event history, the real `DashboardPage` with summary cards, usage widget, running/stopped instance cards, and quick actions (VS-031–VS-033), and the `LaunchButton` + `GET /api/v1/instances/{id}/launch` endpoint with `INSTANCE_LAUNCHED` events (VS-034). Container operations (Sprint 5): start/stop/restart/delete endpoints with state-transition guards (409 `CONFLICT`), `DockerManager` lifecycle methods, a Celery deletion task (persistent volume retained by default; Retain/Delete option is Sprint 6), and a Celery beat auto-stop sweep every 60s for idle running instances (VS-035–VS-040). Runtime-verified: the full stop → start → restart → delete lifecycle, invalid transitions rejected with 409, and the auto-stop sweep stopping backdated and long-idle instances. 24 tests passing. |
 | M6 — Browser Desktop Access | Done | ForwardAuth session validation (`GET /api/v1/auth/desktop-auth/`): owner + RUNNING only, friendly HTML error pages (sign-in 401, access-denied 403, not-running 409); platform-domain session cookie so desktop subdomains share the session; lowest-priority fallback router + `desktop_fallback` catch-all serving friendly pages for stopped instances and unknown subdomains; hash generation hardened against invalid leading DNS characters. Runtime-verified through the real Traefik: owner+RUNNING → 200, no session → 401 page, another user → 403 page (acceptance criterion met), stopped → 409 page, unknown subdomain → 404 page, platform hosts unaffected. |
 | M7 — Software Request Workflow | Done | `SoftwareRequest` model with the full status lifecycle (Pending → Approved/Rejected → Installing → Installed/Failed), `POST/GET /api/v1/software-requests` with ownership scoping and admin visibility + status filter, admin-only approve/reject endpoints (409 on conflicts, reviewed_by/reviewed_at recorded, events), `DockerManager.install_software` via `exec_run` with strictly validated package names (injection attempts rejected), the Celery `dcp.install_software` task, the user's request history page, and the admin approval page. Runtime-verified live: request → approval → `htop` installed into the real container (`/usr/bin/htop` present) → INSTALLED. 46 tests passing. |
-| M8–M10 | Not started | No end-to-end vertical slices exist for analytics, administration, or production readiness. |
+| M8 — Analytics & Event Logging | Done | The event log, user activity, instance statistics, and dashboard metrics (the user + admin dashboards, the analytics endpoints, the usage collection/aggregation) are implemented. |
+| M9 — Administration Portal | Done | Admin-only user/instance management, template management (M3), software request approval, and platform analytics — administrators manage the platform without database access. |
+| M10 — Production Deployment | Done | Production settings (zero `check --deploy` warnings), Traefik TLS + Let's Encrypt, gunicorn + whitenoise, backup/restore scripts (round-trip verified), the deployment runbook, and the v1.0.0 release candidate. |
 
-Sprint 8 (Administration, VS-049 onward) is the active backlog; M8 —
-Analytics & Event Logging follows it.
-
+The MVP is complete (v1.0.0). Post-MVP work follows `22_Future_Roadmap.md`
+(version 1.1 quality improvements next).
 ## M3 completion evidence
 
 1. `DesktopTemplate` model with JSON schema validation (`validate_json_configuration` → `instance.clean()`), slug uniqueness, and enabled flag.
@@ -142,6 +143,17 @@ The user reported that deleting an instance from the admin instances page kept s
 5. VS-056: dependency-free CSS `UsageBar` charts (CPU% of the limit, RAM% of the limit, color-coded thresholds) on the instance cards; uptime in the instance metadata.
 6. Tests: `test_analytics.py` (4 tests) covering sampling + smoothing, missing-container skips, RUNNING-only aggregation, and usage-endpoint scoping; 62 tests passing.
 7. Runtime verification: the usage endpoint returned real container stats (cpu 0.55%, ram 485 MB, uptime 300s) and the beat sweep updated it every 60s (uptime 300 → 360 across two reads).
+
+## M10 production readiness evidence (Sprint 10)
+
+1. VS-058: Traefik access logs enabled (stdout, collected by Docker).
+2. VS-059: `scripts/backup.sh` — the PostgreSQL dump + every persistent desktop volume tarball, with a manifest and retention pruning (cron-schedulable).
+3. VS-060: `scripts/restore.sh` — clean database recreation + restore + volume restore from a backup directory; round-trip verified live (4 users before → restored → 4 users after, migrations intact, backend healthy).
+4. VS-061: `production.py` refuses to start without a strong SECRET_KEY; whitenoise serves the Django admin's static files (compressed manifest storage); Sentry error tracking when SENTRY_DSN is set; `python manage.py check --deploy` against the production settings passes with ZERO warnings.
+5. VS-062: composite DB indexes per 03_Database_Design.md Section 9 — instances (user, status) + (status, created_at), software_requests (instance, created_at) + (status, created_at), events created_at + (event_type, created_at) + (actor, created_at) — with migrations.
+6. VS-064/VS-065: `docker-compose.prod.yml` (gunicorn, whitenoise, TLS, no dev mounts, no exposed database/redis, no dashboard, restart policies) validated with `docker compose config`; `docker/traefik/traefik.prod.yml` (web→websecure redirect, Let's Encrypt HTTP-01, dashboard disabled); `frontend/Dockerfile.prod` (multi-stage build + nginx SPA config); `deployment/README.md` — the full production deployment runbook with backup/restore and disaster recovery.
+7. VS-063: full regression — 62 backend tests passing (three consecutive runs), the frontend production build passing, health + app endpoints 200.
+
 
 
 ## Automation
