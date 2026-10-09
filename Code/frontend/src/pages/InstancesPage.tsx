@@ -1,14 +1,31 @@
 import { useQuery } from "@tanstack/react-query";
 
 import InstanceActions from "@/components/instance/InstanceActions";
+import UsageBar from "@/components/instance/UsageBar";
 import { fetchInstances } from "@/services/instanceService";
 
 /**
- * Instance list with provisioning progress (VS-029) and Launch Desktop
- * buttons (VS-034).
+ * Instance list with provisioning progress (VS-029), Launch Desktop
+ * buttons (VS-034), and usage charts (VS-056).
  */
 export default function InstancesPage() {
   const { data = [], isLoading } = useQuery({ queryKey: ["instances"], queryFn: fetchInstances, refetchInterval: 5000 });
+
+  const cpuPercent = (instance: { cpu_average: number; cpu_limit: string }) => {
+    const cores = parseFloat(instance.cpu_limit) || 1;
+    return (instance.cpu_average / cores) * 100;
+  };
+  const ramPercent = (instance: { ram_average: number; memory_limit: string }) => {
+    const match = instance.memory_limit.match(/^(\d+)G$/);
+    const gb = match ? Number(match[1]) : 2;
+    return (instance.ram_average / (gb * 1024)) * 100;
+  };
+  const uptime = (seconds: number) => {
+    if (!seconds) return "—";
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m`;
+    return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+  };
 
   return (
     <section className="w-full space-y-4">
@@ -24,9 +41,15 @@ export default function InstancesPage() {
                 <span>{instance.status}</span>
               </div>
               <p className="text-sm text-slate-500">
-                {instance.template_name} · {instance.cpu_limit} CPU · {instance.memory_limit}
+                {instance.template_name} · {instance.cpu_limit} CPU · {instance.memory_limit} · up {uptime(instance.uptime_seconds)}
               </p>
               {instance.subdomain && <p className="text-xs text-slate-400">{instance.subdomain}</p>}
+              {instance.status === "RUNNING" && (
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <UsageBar label="CPU" percent={cpuPercent(instance)} detail={`${instance.cpu_average.toFixed(1)}% of ${instance.cpu_limit} cores`} />
+                  <UsageBar label="Memory" percent={ramPercent(instance)} detail={`${instance.ram_average.toFixed(0)} MB of ${instance.memory_limit}`} />
+                </div>
+              )}
               {instance.error_message && <p className="text-sm text-red-600">{instance.error_message}</p>}
               <div className="mt-3">
                 <InstanceActions instanceId={instance.id} status={instance.status} instanceName={instance.name} persistent={instance.persistent} />

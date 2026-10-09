@@ -202,7 +202,7 @@ CELERY_TASK_TIME_LIMIT = 30 * 60
 # Task modules live in the top-level tasks/ package (06_Backend_Architecture.md
 # Section 3), which app.autodiscover_tasks() does not cover — it only imports
 # apps.<name>.tasks. Workers import these modules after django.setup() runs.
-CELERY_IMPORTS = ("tasks.provisioning", "tasks.lifecycle", "tasks.software_installation")
+CELERY_IMPORTS = ("tasks.provisioning", "tasks.lifecycle", "tasks.software_installation", "tasks.analytics")
 
 # ---------------------------------------------------------------------------
 # Docker Manager configuration (05_Container_Architecture.md)

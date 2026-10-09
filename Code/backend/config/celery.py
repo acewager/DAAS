@@ -21,6 +21,10 @@ app.conf.beat_schedule = {
         "task": "dcp.auto_stop_instances",
         "schedule": 60.0,
     },
+    "aggregate-usage": {
+        "task": "dcp.aggregate_usage",
+        "schedule": 60.0,
+    },
 }
 
 

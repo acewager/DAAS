@@ -10,11 +10,16 @@ from .models import DesktopInstance
 class InstanceSerializer(serializers.ModelSerializer):
     template_name = serializers.CharField(source="template.name", read_only=True)
     subdomain = serializers.CharField(read_only=True)
+    # Usage analytics (VS-056): null-safe traversal — instances without an
+    # Analytics record report zeros.
+    cpu_average = serializers.FloatField(source="analytics.cpu_average", read_only=True, default=0.0)
+    ram_average = serializers.FloatField(source="analytics.ram_average", read_only=True, default=0.0)
+    uptime_seconds = serializers.IntegerField(source="analytics.uptime_seconds", read_only=True, default=0)
 
     class Meta:
         model = DesktopInstance
-        fields = ("id", "name", "template", "template_name", "status", "subdomain", "cpu_limit", "memory_limit", "persistent", "auto_stop_minutes", "error_message", "created_at")
-        read_only_fields = ("id", "status", "subdomain", "error_message", "created_at")
+        fields = ("id", "name", "template", "template_name", "status", "subdomain", "cpu_limit", "memory_limit", "persistent", "auto_stop_minutes", "error_message", "cpu_average", "ram_average", "uptime_seconds", "created_at")
+        read_only_fields = ("id", "status", "subdomain", "error_message", "cpu_average", "ram_average", "uptime_seconds", "created_at")
 
 
 class InstanceOrderSerializer(serializers.Serializer):

@@ -115,6 +115,27 @@ class DockerManager:
         except Exception as exc:
             raise DockerManagerError(str(exc)) from exc
 
+    def container_usage(self, *, instance):
+        """Sample a RUNNING container's CPU/memory usage (VS-054). Returns
+        {"cpu_percent": float (0-100 across the CPU limit), "ram_mb": float}
+        or None when the container is gone or not reporting."""
+        try:
+            container = self.client.containers.get(instance.container_name)
+            if container.status != "running":
+                return None
+            stats = container.stats(stream=False)
+            # CPU: delta of usage vs system time since the last reading.
+            cpu_delta = stats["cpu_stats"]["cpu_usage"]["total_usage"] - stats["precpu_stats"]["cpu_usage"]["total_usage"]
+            system_delta = stats["cpu_stats"]["system_cpu_usage"] - stats["precpu_stats"]["system_cpu_usage"]
+            online = stats["cpu_stats"].get("online_cpus", 1) or 1
+            cpu_percent = (cpu_delta / system_delta * online * 100) if system_delta > 0 else 0.0
+            # Memory: used bytes excluding inactive file cache.
+            memory = stats["memory_stats"]
+            used_bytes = memory.get("usage", 0) - memory.get("stats", {}).get("inactive_file", 0)
+            return {"cpu_percent": round(max(0.0, cpu_percent), 2), "ram_mb": round(max(0.0, used_bytes) / (1024 * 1024), 2)}
+        except Exception:  # noqa: BLE001 — sampling is best-effort
+            return None
+
     def install_software(self, *, instance, name):
         """Install a package into a RUNNING instance's container (VS-047).
         The name is a validated Debian package name — no shell metacharacters;

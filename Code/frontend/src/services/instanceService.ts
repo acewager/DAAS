@@ -11,6 +11,9 @@ export interface Instance {
   persistent?: boolean;
   auto_stop_minutes?: number;
   error_message: string;
+  cpu_average: number;
+  ram_average: number; // MB
+  uptime_seconds: number;
 }
 
 export interface OrderInstanceInput {

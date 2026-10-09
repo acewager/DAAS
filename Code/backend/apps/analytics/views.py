@@ -16,6 +16,36 @@ class DashboardStatisticsView(APIView):
         return Response({"success": True, "message": "Dashboard statistics retrieved successfully.", "data": data})
 
 
+class InstanceUsageView(APIView):
+    """GET /api/v1/analytics/instances/{id} — per-instance usage
+    (07_REST_API.md Section 12, VS-054/VS-056). Ownership-scoped."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, instance_id):
+        from django.shortcuts import get_object_or_404
+
+        from apps.instances.models import DesktopInstance
+        from apps.accounts.models import UserRole
+        from services.analytics_service import AnalyticsService
+
+        scope = None if (request.user.role == UserRole.ADMIN or request.user.role == UserRole.SUPER_ADMIN) else request.user
+        lookup = {"pk": instance_id}
+        if scope is not None:
+            lookup["user"] = scope
+        instance = get_object_or_404(DesktopInstance, **lookup)
+        analytics = AnalyticsService.for_instance(instance)
+        data = {
+            "instance_id": str(instance.id),
+            "status": instance.status,
+            "cpu_average": analytics.cpu_average if analytics else 0.0,
+            "ram_average": analytics.ram_average if analytics else 0.0,
+            "uptime_seconds": analytics.uptime_seconds if analytics else 0,
+            "last_calculated": analytics.last_calculated.isoformat() if analytics and analytics.last_calculated else None,
+        }
+        return Response({"success": True, "message": "Instance usage retrieved successfully.", "data": data})
+
+
 class AdminAnalyticsView(APIView):
     """GET /api/v1/admin/analytics/ — platform analytics (VS-053, Admin Only)."""
 
