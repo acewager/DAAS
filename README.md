@@ -127,6 +127,7 @@ Operational guides:
 
 - 🚀 [Local development](Code/README.md) — the one-command setup and the engineering rules
 - 🌍 [Production deployment runbook](Code/deployment/README.md) — HTTPS, backups, restore, disaster recovery
+- 📦 [User guide](Code/docs/USER_GUIDE.md) — software requests (valid package names) and persistent storage (retain/re-attach)
 - ✅ [Milestone readiness audit](Code/docs/MILESTONE_READINESS_AUDIT.md) — the implementation evidence for every milestone
 
 ## 🛠️ Operations
