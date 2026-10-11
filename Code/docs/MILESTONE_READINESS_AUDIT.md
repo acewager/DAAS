@@ -72,6 +72,15 @@ The user reported: the Django admin login flashes back to the login page, the ap
 5. **Stale-cookie diagnosis:** browsers hold stale `Domain=.localhost` session cookies (from earlier logins, pointing to purged sessions of removed test users); Django keeps the LAST sessionid in the Cookie header. Stale sessions were purged; users re-login and receive fresh host-only cookies.
 6. Runtime verification: launch → token URL → ForwardAuth 200 + desktop cookie set → follow-up with cookie only → 200; the Django admin login/logout cycle and the app login/templates/launch/logout verified in a real browser session; 50 tests passing.
 
+## Instances-page blank-screen fix (2026-10-11, user-reported)
+
+The user reported: after creating an instance and seeing it provisioning, the instances page went blank (even refreshing didn't help), while the instance was created successfully. Root cause and fixes:
+
+1. **Null usage fields (root cause, fixed):** the `InstanceSerializer` usage fields (`source="analytics.cpu_average"`, read-only with `default=0.0`) returned `null` for instances without an Analytics record — DRF read-only defaults do not apply when a source traversal on a missing OneToOne fails. The instances page called `.toFixed(1)` on the null → a TypeError crashed the whole React tree (no error boundary → a blank page), and refreshing re-crashed identically since the state persisted. The serializer now uses null-safe `SerializerMethodField`s reporting zeros.
+2. **Frontend defense-in-depth (fixed):** the usage rendering uses `?? 0` fallbacks and the `UsageBar` clamp is NaN-safe.
+3. Regression test: `test_instance_list_reports_zero_usage_without_analytics` asserts zeros in the list response for an instance without analytics; 63 tests passing.
+4. Verified in a real browser session: create → provisioning → RUNNING → the instances page renders with usage bars, refresh works, zero console errors.
+
 ## Instance-actions invalidation fix (2026-10-09, user-reported)
 
 The user reported that deleting an instance from the admin instances page kept showing RUNNING until it became DELETED, with the DELETING state never visible. Findings:
