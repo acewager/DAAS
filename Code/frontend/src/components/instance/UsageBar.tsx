@@ -6,10 +6,11 @@ interface UsageBarProps {
 
 /**
  * Usage bar (VS-056, Sprint 9) — a dependency-free CSS chart for per-instance
- * usage (09_User_Experience.md Section 9: CPU/memory widgets).
+ * usage (09_User_Experience.md Section 9: CPU/memory widgets). Percent is
+ * clamped and NaN-safe (missing analytics render as 0).
  */
 export default function UsageBar({ label, percent, detail }: UsageBarProps) {
-  const clamped = Math.max(0, Math.min(100, percent));
+  const clamped = Math.max(0, Math.min(100, Number.isFinite(percent) ? percent : 0));
   const color = clamped > 80 ? "bg-danger" : clamped > 50 ? "bg-warning" : "bg-success";
   return (
     <div className="space-y-1">

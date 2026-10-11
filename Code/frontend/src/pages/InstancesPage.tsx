@@ -11,14 +11,17 @@ import { fetchInstances } from "@/services/instanceService";
 export default function InstancesPage() {
   const { data = [], isLoading } = useQuery({ queryKey: ["instances"], queryFn: fetchInstances, refetchInterval: 5000 });
 
+  // Null-safe: missing analytics fields arrive as null.
   const cpuPercent = (instance: { cpu_average: number; cpu_limit: string }) => {
     const cores = parseFloat(instance.cpu_limit) || 1;
-    return (instance.cpu_average / cores) * 100;
+    const average = instance.cpu_average ?? 0;
+    return (average / cores) * 100;
   };
   const ramPercent = (instance: { ram_average: number; memory_limit: string }) => {
     const match = instance.memory_limit.match(/^(\d+)G$/);
     const gb = match ? Number(match[1]) : 2;
-    return (instance.ram_average / (gb * 1024)) * 100;
+    const average = instance.ram_average ?? 0;
+    return (average / (gb * 1024)) * 100;
   };
   const uptime = (seconds: number) => {
     if (!seconds) return "—";
@@ -46,8 +49,8 @@ export default function InstancesPage() {
               {instance.subdomain && <p className="text-xs text-slate-400">{instance.subdomain}</p>}
               {instance.status === "RUNNING" && (
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  <UsageBar label="CPU" percent={cpuPercent(instance)} detail={`${instance.cpu_average.toFixed(1)}% of ${instance.cpu_limit} cores`} />
-                  <UsageBar label="Memory" percent={ramPercent(instance)} detail={`${instance.ram_average.toFixed(0)} MB of ${instance.memory_limit}`} />
+                  <UsageBar label="CPU" percent={cpuPercent(instance)} detail={`${(instance.cpu_average ?? 0).toFixed(1)}% of ${instance.cpu_limit} cores`} />
+                  <UsageBar label="Memory" percent={ramPercent(instance)} detail={`${(instance.ram_average ?? 0).toFixed(0)} MB of ${instance.memory_limit}`} />
                 </div>
               )}
               {instance.error_message && <p className="text-sm text-red-600">{instance.error_message}</p>}

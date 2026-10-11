@@ -10,16 +10,36 @@ from .models import DesktopInstance
 class InstanceSerializer(serializers.ModelSerializer):
     template_name = serializers.CharField(source="template.name", read_only=True)
     subdomain = serializers.CharField(read_only=True)
-    # Usage analytics (VS-056): null-safe traversal — instances without an
-    # Analytics record report zeros.
-    cpu_average = serializers.FloatField(source="analytics.cpu_average", read_only=True, default=0.0)
-    ram_average = serializers.FloatField(source="analytics.ram_average", read_only=True, default=0.0)
-    uptime_seconds = serializers.IntegerField(source="analytics.uptime_seconds", read_only=True, default=0)
+    # Usage analytics (VS-056): null-safe — instances without an Analytics
+    # record report zeros (a source traversal on a missing OneToOne returns
+    # None, so read-only defaults alone do not apply).
+    cpu_average = serializers.SerializerMethodField()
+    ram_average = serializers.SerializerMethodField()
+    uptime_seconds = serializers.SerializerMethodField()
 
     class Meta:
         model = DesktopInstance
         fields = ("id", "name", "template", "template_name", "status", "subdomain", "cpu_limit", "memory_limit", "persistent", "auto_stop_minutes", "error_message", "cpu_average", "ram_average", "uptime_seconds", "created_at")
-        read_only_fields = ("id", "status", "subdomain", "error_message", "cpu_average", "ram_average", "uptime_seconds", "created_at")
+        read_only_fields = ("id", "status", "subdomain", "error_message", "created_at")
+
+    def _analytics(self, instance):
+        from apps.analytics.models import Analytics
+        try:
+            return Analytics.objects.get(instance=instance)
+        except Analytics.DoesNotExist:
+            return None
+
+    def get_cpu_average(self, instance) -> float:
+        analytics = self._analytics(instance)
+        return analytics.cpu_average if analytics else 0.0
+
+    def get_ram_average(self, instance) -> float:
+        analytics = self._analytics(instance)
+        return analytics.ram_average if analytics else 0.0
+
+    def get_uptime_seconds(self, instance) -> int:
+        analytics = self._analytics(instance)
+        return analytics.uptime_seconds if analytics else 0
 
 
 class InstanceOrderSerializer(serializers.Serializer):

@@ -87,3 +87,20 @@ def test_launch_returns_url_for_running_owned_instance(settings):
     # Not running → 409; not owned → 404
     assert client.get(reverse("instance-launch", kwargs={"instance_id": queued.id})).status_code == 409
     assert client.get(reverse("instance-launch", kwargs={"instance_id": theirs.id})).status_code == 404
+
+
+@pytest.mark.django_db
+def test_instance_list_reports_zero_usage_without_analytics():
+    """Regression: the serializer's usage fields must be null-safe — a null
+    cpu_average crashed the instances page (toFixed on null)."""
+    user = User.objects.create_user("owner", "owner@example.com", "SecurePass123!")
+    make = DesktopTemplate.objects.create(name="Minimal", slug="minimal", json_configuration={"image": "desktop:minimal"})
+    DesktopInstance.objects.create(user=user, template=make, name="No analytics yet", cpu_limit="2", memory_limit="2G", status=InstanceStatus.RUNNING)
+
+    client = APIClient(); client.force_authenticate(user)
+    response = client.get(reverse("instance-list"))
+    assert response.status_code == 200
+    instance = response.data["data"]["instances"][0]
+    assert instance["cpu_average"] == 0.0
+    assert instance["ram_average"] == 0.0
+    assert instance["uptime_seconds"] == 0
