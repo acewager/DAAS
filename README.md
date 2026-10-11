@@ -1,216 +1,151 @@
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.png">
+  <img src="assets/banner-light.png" alt="Desktop Cloud Platform — self-hosted Linux desktops in your browser" width="840" />
+</picture>
+
 # Desktop Cloud Platform
 
-Self-hosted Desktop-as-a-Service (DaaS): provision isolated Linux desktop
-environments in Docker containers, accessed through the browser via
-noVNC. See the full specification in the project documentation
-(`01A_Executive_Summary.md` through `22_Future_Roadmap.md`).
+**Self-hosted Linux desktops in your browser — spun up in seconds, isolated in Docker, on a single server.**
 
-## Status
+[![Release](https://img.shields.io/github/v/tag/acewager/DAAS?label=release&sort=semver&color=0EA5E9)](https://github.com/acewager/DAAS/releases)
+[![CI](https://img.shields.io/github/actions/workflow/status/acewager/DAAS/ci.yml?label=CI&color=0EA5E9)](https://github.com/acewager/DAAS/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-62%20passing-22C55E)](https://github.com/acewager/DAAS/actions/workflows/ci.yml)
+[![Milestones](https://img.shields.io/badge/milestones-10%2F10%20complete-8B5CF6)](PRD%20Docs/01D_Development_Roadmap.md)
+[![Stack](https://img.shields.io/badge/Django%205%20·%20DRF%20·%20React%2018%20·%20Docker-0F172A)](PRD%20Docs/02_System_Architecture.md)
 
-**MVP COMPLETE — all milestones M1 through M10 done (v1.0.0)**
-(`01D_Development_Roadmap.md`, `17_Project_Task_Backlog.md`).
+</div>
 
-Project foundation, authentication, template management, instance
-provisioning, the user dashboard, container operations, persistence,
-browser desktop access, the software request workflow, administration, and
-usage analytics (VS-001 through VS-066) are implemented; production
-readiness (HTTPS, backups, monitoring, disaster recovery) is documented in
-[`Code/deployment/README.md`](Code/deployment/README.md).
+---
 
-| Slice  | Deliverable                        | Status |
-|--------|-------------------------------------|--------|
-| VS-001 | Repository structure                | Done |
-| VS-002 | Django project                      | Done |
-| VS-003 | PostgreSQL connection                | Done |
-| VS-004 | Redis connection                     | Done |
-| VS-005 | Celery worker + test task            | Done |
-| VS-006 | React + TypeScript + Tailwind        | Done |
-| VS-007 | Traefik reverse proxy                | Done |
-| VS-008 | DockerManager skeleton               | Done |
-| VS-009 | Custom User model                    | Done |
-| VS-010 | Registration API                     | Done |
-| VS-011 | Login API                            | Done |
-| VS-012 | Logout API                           | Done |
-| VS-013 | Session middleware                   | Done |
-| VS-014 | Protected routes                     | Done |
-| VS-015 | React Login page                     | Done |
-| VS-016 | React Registration page              | Done |
-| VS-017 | Authentication tests                 | Done |
-| VS-018 | Template model                       | Done |
-| VS-019 | Template admin CRUD                  | Done |
-| VS-020 | Template API                         | Done |
-| VS-021 | Template selection UI                | Done |
-| VS-022 | Instance model                       | Done |
-| VS-023 | Create Instance API                  | Done |
-| VS-024 | Docker create container              | Done |
-| VS-026 | Subdomain assignment                 | Done |
-| VS-029 | Provisioning progress UI             | Done |
-| VS-030 | Dashboard statistics API             | Done |
-| VS-031 | Running instances page               | Done |
-| VS-032 | Instance cards                       | Done |
-| VS-033 | Usage analytics widget               | Done |
-| VS-034 | Launch Desktop button                | Done |
-| VS-035 | Start container                      | Done |
-| VS-036 | Stop container                       | Done |
-| VS-037 | Restart container                    | Done |
-| VS-038 | Delete container                     | Done |
-| VS-039 | Auto-stop scheduler                  | Done |
-| VS-040 | Error handling                       | Done |
-| VS-041 | Persistent volume manager            | Done |
-| VS-042 | Delete confirmation workflow         | Done |
-| VS-043 | Retain/Delete data option            | Done |
-| VS-044 | Software Request model               | Done |
-| VS-045 | Submit request API + UI              | Done |
-| VS-046 | Admin approval page                  | Done |
-| VS-047 | Celery installation task             | Done |
-| VS-048 | Status tracking                      | Done |
-| VS-049 | Admin dashboard                      | Done |
-| VS-050 | User management                      | Done |
-| VS-051 | Instance management                  | Done |
-| VS-052 | Event Log viewer                     | Done |
-| VS-053 | Analytics dashboard                  | Done |
-| VS-057 | Health page                          | Done |
-| VS-054 | Usage collection                     | Done |
-| VS-055 | Background aggregation               | Done |
-| VS-056 | Charts                               | Done |
-| VS-058 | Logging improvements                 | Done |
-| VS-059 | Backup automation                    | Done |
-| VS-060 | Restore procedure                    | Done |
-| VS-061 | Security review                      | Done |
-| VS-062 | Performance review (DB indexes)      | Done |
-| VS-063 | Full regression tests                | Done |
-| VS-064 | Deployment verification              | Done |
-| VS-065 | Documentation review                 | Done |
-| VS-066 | Release candidate (v1.0.0)           | Done |
+**Desktop Cloud Platform** is a complete, self-hosted Desktop-as-a-Service (DaaS): users pick a template, get an isolated Linux desktop in a Docker container, and open it in their browser through [noVNC](https://novnc.com) — with resource limits, persistent storage, an admin portal, and usage analytics. Think *your own private cloud-desktop service*, on one machine.
 
-Authentication includes registration, session login/logout, role checks,
-profile management, password reset, throttling, audit events, and regression
-coverage. Template management includes the JSON-validated template model,
-admin-only CRUD, a development seed command, a template browsing page,
-event logging, and regression coverage. Instance provisioning includes the
-instance order API, Celery-driven Docker provisioning with resource limits
-and persistent storage, hash-based subdomains routed by Traefik (VS-026),
-provisioning events, the ordering form and progress UI, and regression
-coverage. The dashboard includes the per-user statistics API
-(`GET /api/v1/analytics/dashboard`), the event history API
-(`GET /api/v1/events`), instance summary cards with a usage widget, and
-the Launch Desktop button via `GET /api/v1/instances/{id}/launch`. Container
-operations add start/stop/restart/delete endpoints with state-transition
-guards (409 on conflicts), a Celery deletion task (persistent volume
-retained by default), and a Celery beat auto-stop sweep for idle instances.
-Persistence adds the Volume tracking model (03_Database_Design.md #volumes),
-a volume service pairing instances with their data volumes, and the delete
-confirmation modal with the Retain/Delete data choice. Browser desktop
-access adds the Traefik ForwardAuth session validation
-(`/api/v1/auth/desktop-auth/` — owner + RUNNING only, with friendly HTML
-error pages for sign-in, access-denied, and not-running cases) and a
-lowest-priority fallback router serving friendly pages for stopped
-instances and unknown subdomains. The software request workflow adds
-`POST/GET /api/v1/software-requests` with admin-only approve/reject
-endpoints, a strictly validated package name (no shell metacharacters),
-a Celery installation task (`apt-get` inside the target container), the
-user's request history page, and the admin approval page. Administration
-adds the admin-only endpoints (`/api/v1/admin/users`, `/admin/instances/`,
-`/admin/events/`, `/admin/analytics/`, `/admin/health/` with search,
-status, role filters, and pagination), admin management of any instance,
-role/activation management (super-admin-only role changes), the admin
-dashboard (platform stats + system health for database/redis/docker),
-and the event log viewer. Usage analytics adds the `Analytics` model,
-Docker stats sampling with a Celery beat aggregation sweep every 60s
-(`/api/v1/analytics/instances/{id}`, ownership-scoped), and dependency-free
-CSS usage charts on the instance cards. See
-[`Code/docs/MILESTONE_READINESS_AUDIT.md`](Code/docs/MILESTONE_READINESS_AUDIT.md).
+Built end-to-end from a 22-document PRD: **66 vertical slices**, **10/10 milestones**, **62 backend tests**.
 
-## Stack
+## ✨ Features
 
-Django 5 + DRF · PostgreSQL 16 · Redis 7 · Celery · Docker (docker-py) ·
-Traefik v3 · React 18 + TypeScript + Vite · Tailwind CSS · TanStack Query
+| | Feature | What you get |
+|---|---|---|
+| 🖥️ | **Browser desktops** | Isolated XFCE desktops in Docker, accessed through noVNC via hash-based subdomains with ForwardAuth session validation |
+| 🚀 | **One-click provisioning** | Order from JSON-validated templates → Celery provisions the container with CPU/memory limits, persistent storage, and a readiness gate |
+| 🎛️ | **Full lifecycle** | Start / stop / restart / delete, with an auto-stop sweep for idle instances |
+| 📦 | **Software on demand** | Users request extra software; admins approve; Celery installs it inside the running container |
+| 📊 | **Usage analytics** | Per-instance CPU/memory sampling with a background aggregation sweep and live usage charts |
+| 🛡️ | **Admin portal** | User & instance management, event log viewer, platform analytics, system health — all without touching the database |
+| 🔐 | **Secure by default** | Session auth with roles, ForwardAuth-guarded desktops, strict package-name validation, production settings that pass `check --deploy` with zero warnings |
+| 🌐 | **Production-ready** | HTTPS via Traefik + Let's Encrypt, gunicorn, whitenoise, backup/restore scripts, and a deployment runbook |
 
-## Quick Start
+## 🚀 Quick Start
 
-Requires Docker and Docker Compose on a Linux host (or a Linux VM — see
-`12_Deployment.md` Section 5 for the documented dev setup).
-
-**One command brings the whole platform up** — it creates `.env`, builds the
-images, migrates, seeds the development templates, and starts every service:
+> Requires a Linux host with **Docker** and **Docker Compose v2**.
 
 ```bash
-git clone <this-repo>
+git clone https://github.com/acewager/DAAS.git
 cd DAAS/Code
 ./scripts/init_dev.sh
 ```
 
-Or step by step:
+That single command creates `.env`, builds the images, migrates, seeds three
+development templates, and starts the full stack — then:
+
+| | Where | What |
+|---|---|---|
+| 🌐 | `http://app.localhost` | The web app — register and create your first desktop |
+| 🔌 | `http://api.localhost/api/v1/health/` | The API health check |
+| 🛠️ | `http://api.localhost/admin/` | The Django admin |
+| 📈 | `http://localhost:8080` | The Traefik dashboard (dev only) |
+
+<details>
+<summary><strong>Step by step</strong></summary>
 
 ```bash
-cp .env.example .env
-docker compose build
-docker compose up -d postgres redis
+cp .env.example .env                 # configure, or start with defaults
+docker compose build                 # build all images
+docker compose up -d postgres redis  # start the core services
 docker compose run --rm backend python manage.py migrate
-docker compose up -d
+docker compose up -d                 # start the full stack
 ```
 
-Add to `/etc/hosts`:
+Add to `/etc/hosts` (desktop subdomains resolve automatically):
+`127.0.0.1 app.localhost api.localhost`
 
-```
-127.0.0.1 app.localhost api.localhost
-```
-
-Then visit:
-
-- **Frontend:** http://app.localhost
-- **Backend health check:** http://api.localhost/api/v1/health/
-- **Traefik dashboard (dev only):** http://localhost:8080
-- **Django admin:** http://api.localhost/admin/
-
-Create an admin user:
+Create the admin user and seed templates:
 
 ```bash
 docker compose exec backend python manage.py createsuperuser
-```
-
-Create the three sample development templates:
-
-```bash
 docker compose exec backend python manage.py seed_templates
 ```
 
-Confirm the Celery worker is alive:
+</details>
 
-```bash
-docker compose exec backend celery -A config call dcp.debug_task
+## 🏗️ Architecture
+
+```text
+┌──────────┐   ┌─────────┐   ┌──────────┐   ┌───────────┐   ┌────────────┐
+│  Browser │──▶│ Traefik │──▶│  Django  │──▶│   Redis   │──▶│   Celery   │
+│ (noVNC)  │   │  HTTPS  │   │  + DRF   │   │  (broker) │   │ (provision)│
+└──────────┘   └─────────┘   └──────────┘   └───────────┘   └─────┬──────┘
+     │              │             │                               │
+     │              │        ┌────▼─────┐                  ┌──────▼──────┐
+     └──────────────┘        │PostgreSQL│                  │   Docker    │
+      desktop subdomains     └──────────┘                  │  desktops   │
+                                                           └─────────────┘
 ```
 
-## Repository Structure
+| Layer | Technology |
+|---|---|
+| Backend | Django 5 · Django REST Framework · Celery |
+| Frontend | React 18 · TypeScript · Vite · Tailwind CSS · TanStack Query |
+| Data | PostgreSQL 16 · Redis 7 |
+| Infrastructure | Docker · Traefik v3 (TLS, ForwardAuth, desktop routing) |
 
-```
-backend/          Django project (config/, apps/, services/, docker_manager/, tasks/, api/, tests/)
-frontend/         React + TypeScript (Vite)
-docker/traefik/   Reverse proxy static config
-docs/             Repo-local documentation (runbooks, generated schemas — later milestones)
-deployment/       Production deployment assets (M10)
-scripts/          Dev/ops helper scripts
-docker-compose.yml
-.env.example
-```
+**Engineering rules** — business logic lives in services, only `docker_manager/` talks to Docker, long-running work runs in Celery, and every feature ships as a full vertical slice (backend → API → frontend → tests → docs).
 
-Backend and frontend structures intentionally mirror
-`06_Backend_Architecture.md` Section 3 and `08_Frontend_Architecture.md`
-Section 5.
+## 🗺️ Roadmap — MVP complete
 
-## Engineering Rules (see `16_AI_AGENT_INSTRUCTIONS.md` and `14_Coding_Standards.md`)
+| Milestone | Status |
+|---|---|
+| M1 — Project Foundation | ✅ Done |
+| M2 — Authentication | ✅ Done |
+| M3 — Template Management | ✅ Done |
+| M4 — Instance Provisioning | ✅ Done |
+| M5 — Instance Dashboard | ✅ Done |
+| M6 — Browser Desktop Access | ✅ Done |
+| M7 — Software Request Workflow | ✅ Done |
+| M8 — Analytics & Event Logging | ✅ Done |
+| M9 — Administration Portal | ✅ Done |
+| M10 — Production Deployment | ✅ Done |
 
-- Business logic lives in `backend/services/`, never in views or React
-  components.
-- Only `backend/docker_manager/` talks to Docker.
-- Long-running work goes through Celery, never inline in a request.
-- Every completed feature is a full vertical slice: backend → API →
-  frontend → tests → docs.
-- No secrets committed — configuration is environment-variable driven
-  (`.env`, never `.env` itself).
+See [`22_Future_Roadmap.md`](PRD%20Docs/22_Future_Roadmap.md) for what's next (v1.1 quality improvements, v1.2 software catalog, v2.0 multi-host scaling, v3.0 billing & marketplace).
 
-## Next Up
+## 📚 Documentation
 
-**Post-MVP** (`22_Future_Roadmap.md`): version 1.1 quality improvements
-(better analytics, enhanced monitoring, performance optimizations), then
-version 1.2 (advanced template management, software catalog) and beyond.
+The full specification lives in [`PRD Docs/`](PRD%20Docs/) — 22 documents covering the executive summary, system architecture, database design, security, REST API, UX, deployment, and the threat model:
+
+- [`01A_Executive_Summary.md`](PRD%20Docs/01A_Executive_Summary.md) · [`02_System_Architecture.md`](PRD%20Docs/02_System_Architecture.md) · [`03_Database_Design.md`](PRD%20Docs/03_Database_Design.md) · [`04_Authentication_and_Security.md`](PRD%20Docs/04_Authentication_and_Security.md) · [`05_Container_Architecture.md`](PRD%20Docs/05_Container_Architecture.md) · [`07_REST_API.md`](PRD%20Docs/07_REST_API.md) · [`12_Deployment.md`](PRD%20Docs/12_Deployment.md) · [`17_Project_Task_Backlog.md`](PRD%20Docs/17_Project_Task_Backlog.md) (all 66 slices)
+
+Operational guides:
+
+- 🚀 [Local development](Code/README.md) — the one-command setup and the engineering rules
+- 🌍 [Production deployment runbook](Code/deployment/README.md) — HTTPS, backups, restore, disaster recovery
+- ✅ [Milestone readiness audit](Code/docs/MILESTONE_READINESS_AUDIT.md) — the implementation evidence for every milestone
+
+## 🛠️ Operations
+
+| Task | Command |
+|---|---|
+| Start the stack | `./scripts/init_dev.sh` |
+| Back up (database + desktop volumes) | `./scripts/backup.sh` |
+| Restore from a backup | `./scripts/restore.sh backups/<timestamp>/` |
+| Run the tests | `docker compose exec backend pytest -q` |
+
+---
+
+<div align="center">
+
+**Desktop Cloud Platform** · v1.0.0 · built from spec, slice by slice
+
+<img src="assets/icon.png" width="64" alt="Desktop Cloud Platform logo" />
+
+</div>
