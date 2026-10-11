@@ -5,15 +5,13 @@
   <img src="assets/banner-light.png" alt="Desktop Cloud Platform — self-hosted Linux desktops in your browser" width="840" />
 </picture>
 
-# Desktop Cloud Platform
-
-**Self-hosted Linux desktops in your browser — spun up in seconds, isolated in Docker, on a single server.**
-
 [![Release](https://img.shields.io/github/v/tag/acewager/DAAS?label=release&sort=semver&color=0EA5E9)](https://github.com/acewager/DAAS/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/acewager/DAAS/ci.yml?label=CI&color=0EA5E9)](https://github.com/acewager/DAAS/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-62%20passing-22C55E)](https://github.com/acewager/DAAS/actions/workflows/ci.yml)
 [![Milestones](https://img.shields.io/badge/milestones-10%2F10%20complete-8B5CF6)](PRD%20Docs/01D_Development_Roadmap.md)
 [![Stack](https://img.shields.io/badge/Django%205%20·%20DRF%20·%20React%2018%20·%20Docker-0F172A)](PRD%20Docs/02_System_Architecture.md)
+
+**Self-hosted Linux desktops in your browser — spun up in seconds, isolated in Docker, on a single server.**
 
 </div>
 
