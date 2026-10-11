@@ -15,11 +15,17 @@ def provision_instance(instance_id):
     instance.status = InstanceStatus.PROVISIONING
     instance.save(update_fields=["status", "updated_at"])
     try:
-        container = docker_manager.create_container(instance=instance, template=instance.template)
+        from apps.instances.models import Volume
+        from services.volume_service import VolumeService
+        # VS-043: an attached retained volume's record predates provisioning —
+        # mount ITS path so the data carries over; fresh instances get their
+        # own implicit volume.
+        volume_path = VolumeService.volume_path_for(instance)
+        container = docker_manager.create_container(instance=instance, template=instance.template, volume_path=volume_path)
         instance.container_id = container.id
         instance.save(update_fields=["container_id", "updated_at"])
-        from services.volume_service import VolumeService
-        VolumeService.record_for_instance(instance)
+        if instance.persistent and not Volume.objects.filter(instance=instance).exists():
+            VolumeService.record_for_instance(instance)
         _wait_for_desktop_ui(instance, container)
         instance.status = InstanceStatus.RUNNING
         instance.save(update_fields=["status", "updated_at"])

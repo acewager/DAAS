@@ -11,10 +11,17 @@ from services.event_log_service import record_event
 class InstanceService:
     @staticmethod
     def request(*, user, template, **data):
+        # VS-043: an optional retained volume id re-points the volume record
+        # to the new instance so its data carries over.
+        attach_volume_id = data.pop("attach_volume_id", None)
         instance = DesktopInstance.objects.create(user=user, template=template, **data)
         instance.status = InstanceStatus.QUEUED
         instance.save(update_fields=["status", "updated_at"])
-        record_event(actor=user, event_type=EventType.INSTANCE_REQUESTED, message="Instance provisioning requested.", metadata={"instance_id": str(instance.id), "template_id": str(template.id)})
+        attached = None
+        if attach_volume_id:
+            from services.volume_service import VolumeService
+            attached = VolumeService.attach(attach_volume_id, user=user, new_instance=instance)
+        record_event(actor=user, event_type=EventType.INSTANCE_REQUESTED, message="Instance provisioning requested.", metadata={"instance_id": str(instance.id), "template_id": str(template.id), "attached_volume": attached.host_path if attached else None})
         from tasks.provisioning import provision_instance
         provision_instance.delay(str(instance.id))
         return instance

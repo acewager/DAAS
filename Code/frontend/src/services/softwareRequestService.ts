@@ -11,6 +11,7 @@ export interface SoftwareRequest {
   software_name: string;
   justification: string;
   status: SoftwareRequestStatus;
+  failure_reason: string;
   reviewer_name: string;
   reviewed_at: string | null;
   created_at: string;
@@ -35,6 +36,18 @@ export async function submitSoftwareRequest(input: SubmitSoftwareRequestInput) {
     justification: input.justification ?? "",
   });
   return response.data.data.request;
+}
+
+export interface RetainedVolume {
+  id: string;
+  host_path: string;
+  original_instance: string;
+  released_at: string;
+}
+
+export async function fetchRetainedVolumes() {
+  const response = await apiClient.get<{ data: { volumes: RetainedVolume[] } }>("/volumes/");
+  return response.data.data.volumes;
 }
 
 export async function approveSoftwareRequest(id: string) {

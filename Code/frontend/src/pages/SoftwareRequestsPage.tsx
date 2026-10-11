@@ -110,6 +110,11 @@ export default function SoftwareRequestsPage() {
             </div>
             <p className="mt-1 text-sm text-slate-500">{request.instance_name} · {new Date(request.created_at).toLocaleString()}</p>
             {request.justification && <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{request.justification}</p>}
+            {request.status === "FAILED" && request.failure_reason && (
+              <p className="mt-1 rounded bg-red-50 p-2 text-xs text-red-700 dark:bg-red-950 dark:text-red-300">
+                Installation failed: {request.failure_reason}
+              </p>
+            )}
             {request.reviewer_name && (
               <p className="mt-1 text-xs text-slate-400">Reviewed by {request.reviewer_name}</p>
             )}

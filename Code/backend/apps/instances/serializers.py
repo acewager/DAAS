@@ -45,6 +45,7 @@ class InstanceSerializer(serializers.ModelSerializer):
 class InstanceOrderSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=120)
     template_id = serializers.UUIDField()
+    attach_volume_id = serializers.UUIDField(required=False, allow_null=True)
     cpu_limit = serializers.DecimalField(max_digits=4, decimal_places=2, min_value=Decimal("0.25"), max_value=Decimal("16"))
     memory_limit = serializers.RegexField(r"^\d+[MG]$", max_length=20)
     persistent = serializers.BooleanField(default=False)

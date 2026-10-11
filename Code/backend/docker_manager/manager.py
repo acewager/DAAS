@@ -47,10 +47,13 @@ class DockerManager:
 
     # -- Container lifecycle (implemented in M4 — Instance Provisioning) ----
 
-    def create_container(self, *, instance, template):
+    def create_container(self, *, instance, template, volume_path=None):
         try:
             config = template.json_configuration
-            volumes = {f"dcp-data-{instance.id}": {"bind": "/home/user", "mode": "rw"}} if instance.persistent else None
+            volumes = None
+            if instance.persistent:
+                mount = volume_path or f"dcp-data-{instance.id}"
+                volumes = {mount: {"bind": "/home/user", "mode": "rw"}}
             # VS-026: each instance gets a hash-based subdomain routed by
             # Traefik to the container's web UI (ADR-011). M6: every request
             # passes the desktop-auth ForwardAuth middleware first, which

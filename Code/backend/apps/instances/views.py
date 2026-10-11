@@ -20,7 +20,8 @@ class InstanceListView(APIView):
         serializer = InstanceOrderSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        instance = InstanceService.request(user=request.user, template=data.pop("template_id"), **data)
+        attach_volume_id = data.pop("attach_volume_id", None)
+        instance = InstanceService.request(user=request.user, template=data.pop("template_id"), attach_volume_id=attach_volume_id, **data)
         return Response({"success": True, "message": "Instance provisioning requested.", "data": {"instance": InstanceSerializer(instance).data}}, status=202)
 
 

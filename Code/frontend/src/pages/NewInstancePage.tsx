@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 
 import { createInstance } from "@/services/instanceService";
+import { fetchRetainedVolumes } from "@/services/softwareRequestService";
 import { fetchTemplates } from "@/services/templateService";
 
 interface FormValues {
@@ -12,6 +13,7 @@ interface FormValues {
   memoryLimit: string;
   persistent: boolean;
   autoStopMinutes: number;
+  attachVolumeId: string;
 }
 
 /**
@@ -34,7 +36,11 @@ export default function NewInstancePage() {
     watch,
     formState: { errors },
   } = useForm<FormValues>({
-    defaultValues: { name: "", templateId: "", cpuLimit: "2.00", memoryLimit: "2G", persistent: false, autoStopMinutes: 60 },
+    defaultValues: { name: "", templateId: "", cpuLimit: "2.00", memoryLimit: "2G", persistent: false, autoStopMinutes: 60, attachVolumeId: "" },
+  });
+  const { data: retainedVolumes = [] } = useQuery({
+    queryKey: ["retained-volumes"],
+    queryFn: fetchRetainedVolumes,
   });
   const mutation = useMutation({
     mutationFn: createInstance,
@@ -89,6 +95,20 @@ export default function NewInstancePage() {
             Persistent storage
             {!persistenceAvailable && <span className="text-xs text-slate-500">(not supported by this template)</span>}
           </label>
+          {retainedVolumes.length > 0 && (
+            <label className="block text-sm">
+              Attach retained data (optional)
+              <select className="mt-1 w-full rounded border p-2" defaultValue="" {...register("attachVolumeId")}>
+                <option value="">Fresh storage (new empty volume)</option>
+                {retainedVolumes.map((volume) => (
+                  <option key={volume.id} value={volume.id}>
+                    From “{volume.original_instance}” — released {new Date(volume.released_at).toLocaleDateString()}
+                  </option>
+                ))}
+              </select>
+              <span className="text-xs text-slate-500">Attach the storage you kept when deleting a previous desktop.</span>
+            </label>
+          )}
           <label className="block text-sm">
             Auto-stop timeout (minutes)
             <input
