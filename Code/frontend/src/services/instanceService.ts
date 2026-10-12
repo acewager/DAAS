@@ -39,7 +39,7 @@ export async function createInstance(input: OrderInstanceInput) {
     memory_limit: input.memoryLimit,
     persistent: input.persistent,
     auto_stop_minutes: input.autoStopMinutes,
-    attach_volume_id: input.attachVolumeId,
+    ...(input.attachVolumeId ? { attach_volume_id: input.attachVolumeId } : {}),
   });
   return response.data.data.instance;
 }

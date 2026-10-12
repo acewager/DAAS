@@ -45,7 +45,8 @@ class InstanceSerializer(serializers.ModelSerializer):
 class InstanceOrderSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=120)
     template_id = serializers.UUIDField()
-    attach_volume_id = serializers.UUIDField(required=False, allow_null=True)
+    # Tolerates "" (the form's "Fresh storage" default) — normalized to None.
+    attach_volume_id = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     cpu_limit = serializers.DecimalField(max_digits=4, decimal_places=2, min_value=Decimal("0.25"), max_value=Decimal("16"))
     memory_limit = serializers.RegexField(r"^\d+[MG]$", max_length=20)
     persistent = serializers.BooleanField(default=False)
@@ -56,6 +57,16 @@ class InstanceOrderSerializer(serializers.Serializer):
             return DesktopTemplate.objects.get(pk=value, enabled=True)
         except DesktopTemplate.DoesNotExist:
             raise serializers.ValidationError("Selected template is unavailable.")
+
+    def validate_attach_volume_id(self, value):
+        # "" (the form's "Fresh storage" default) normalizes to None.
+        if value in (None, ""):
+            return None
+        import uuid as uuid_module
+        try:
+            return str(uuid_module.UUID(str(value)))
+        except (ValueError, AttributeError, TypeError):
+            raise serializers.ValidationError("Attach volume must be a valid UUID.")
 
     def create(self, validated_data):
         raise NotImplementedError

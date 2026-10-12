@@ -43,7 +43,10 @@ export default function NewInstancePage() {
     queryFn: fetchRetainedVolumes,
   });
   const mutation = useMutation({
-    mutationFn: createInstance,
+    mutationFn: (values: FormValues) => {
+      const { attachVolumeId, ...rest } = values;
+      return createInstance({ ...rest, attachVolumeId: attachVolumeId || undefined });
+    },
     onSuccess: () => navigate("/instances"),
   });
 
@@ -142,7 +145,12 @@ export default function NewInstancePage() {
         </fieldset>
 
         {mutation.isError && (
-          <p className="text-sm text-red-600">Unable to create the instance. Please try again.</p>
+          <p className="text-sm text-red-600">
+            {(() => {
+              const detail = (mutation.error as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
+              return detail ? `Unable to create the instance: ${detail}` : "Unable to create the instance. Please try again.";
+            })()}
+          </p>
         )}
         <button
           className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
