@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 
@@ -34,6 +35,7 @@ export default function NewInstancePage() {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     defaultValues: { name: "", templateId: "", cpuLimit: "2.00", memoryLimit: "2G", persistent: false, autoStopMinutes: 60, attachVolumeId: "" },
@@ -52,6 +54,14 @@ export default function NewInstancePage() {
 
   const selectedTemplate = templates.find((template) => template.id === watch("templateId"));
   const persistenceAvailable = selectedTemplate?.json_configuration.persistent_supported ?? true;
+  // Selecting retained data implies persistence — the form reflects it (the
+  // backend enforces it regardless).
+  const selectedVolume = watch("attachVolumeId");
+  useEffect(() => {
+    if (selectedVolume) {
+      setValue("persistent", true);
+    }
+  }, [selectedVolume, setValue]);
 
   return (
     <div className="max-w-md space-y-4">

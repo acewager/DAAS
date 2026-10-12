@@ -8,12 +8,20 @@ from rest_framework.test import APIClient
 
 from apps.accounts.models import User
 from apps.events.models import EventLog, EventType
+from docker_manager.manager import docker_manager
 from apps.instances.models import DesktopInstance, InstanceStatus
 from apps.templates.models import DesktopTemplate
 
 
 def make_template():
     return DesktopTemplate.objects.create(name="Minimal", slug="minimal", json_configuration={"image": "desktop:minimal"})
+
+
+def make_running_instance(user, name="Mine", status=InstanceStatus.RUNNING):
+    template, _ = DesktopTemplate.objects.get_or_create(
+        name="Minimal", slug="minimal", defaults={"json_configuration": {"image": "desktop:minimal"}}
+    )
+    return DesktopInstance.objects.create(user=user, template=template, name=name, cpu_limit="2", memory_limit="2G", status=status)
 
 
 @pytest.mark.django_db
@@ -199,3 +207,58 @@ def test_delete_instance_task_removes_volume_only_when_requested():
         remove_mock.assert_called_once_with(name=f"dcp-data-{instance.id}")
     assert not Volume.objects.filter(pk=volume.pk).exists()
     assert EventLog.objects.filter(event_type=EventType.INSTANCE_DELETED, message__contains="removed").exists()
+
+
+@pytest.mark.django_db
+def test_attached_volume_implies_persistence_and_mounts_data_path():
+    """VS-043: attaching retained storage forces persistence and mounts the
+    retained volume at the desktop's data path (VS-054 follow-up — the
+    webtop's home is /config, not /home/user)."""
+    user = User.objects.create_user("owner", "owner@example.com", "SecurePass123!")
+    old_instance = make_running_instance(user, name="Old")
+
+    from apps.instances.models import Volume
+
+    volume = Volume.objects.create(instance=old_instance, host_path="dcp-data-old", persistent=True)
+
+    client = APIClient(); client.force_authenticate(user)
+    response = client.post(reverse("instance-list"), {
+        "name": "New desktop", "template_id": str(old_instance.template_id),
+        "cpu_limit": "2", "memory_limit": "2G",
+        "persistent": False,  # the user forgot — attaching implies it
+        "auto_stop_minutes": 60, "attach_volume_id": str(volume.id),
+    }, format="json")
+    assert response.status_code == 202
+    new_instance = DesktopInstance.objects.get(name="New desktop")
+    assert new_instance.persistent is True  # forced by the attach
+    assert new_instance.volume.host_path == "dcp-data-old"  # the retained volume re-pointed
+
+    client_mock = MagicMock()
+    fake_container = MagicMock(); fake_container.id = "abc123"
+    client_mock.containers.create.return_value = fake_container
+    with patch.object(docker_manager, "_client", client_mock), patch("tasks.provisioning._wait_for_desktop_ui"):
+        from tasks.provisioning import provision_instance
+        provision_instance(str(new_instance.id))
+        _, kwargs = client_mock.containers.create.call_args
+        assert list(kwargs["volumes"].keys()) == ["dcp-data-old"]  # the retained volume mounted
+        assert kwargs["volumes"]["dcp-data-old"]["bind"] == "/config"  # the webtop data path
+
+
+@pytest.mark.django_db
+def test_volume_attach_is_ownership_scoped():
+    owner = User.objects.create_user("owner", "owner@example.com", "SecurePass123!")
+    other = User.objects.create_user("other", "other@example.com", "SecurePass123!")
+    template, _ = DesktopTemplate.objects.get_or_create(
+        name="Minimal", slug="minimal", defaults={"json_configuration": {"image": "desktop:minimal"}}
+    )
+    old_instance = make_running_instance(owner, name="Old")
+    from apps.instances.models import Volume
+    volume = Volume.objects.create(instance=old_instance, host_path="dcp-data-old", persistent=True)
+
+    other_client = APIClient(); other_client.force_authenticate(other)
+    response = other_client.post(reverse("instance-list"), {
+        "name": "Steal", "template_id": str(template.id), "cpu_limit": "2",
+        "memory_limit": "2G", "persistent": True, "auto_stop_minutes": 60,
+        "attach_volume_id": str(volume.id),
+    }, format="json")
+    assert response.status_code == 409  # not this account's volume

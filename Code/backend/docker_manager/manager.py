@@ -53,7 +53,11 @@ class DockerManager:
             volumes = None
             if instance.persistent:
                 mount = volume_path or f"dcp-data-{instance.id}"
-                volumes = {mount: {"bind": "/home/user", "mode": "rw"}}
+                # The linuxserver webtop images keep the desktop user's home
+                # (and all session data) in /config — that is the path the
+                # persistent volume must own, not /home/user.
+                data_path = config.get("data_path", "/config")
+                volumes = {mount: {"bind": data_path, "mode": "rw"}}
             # VS-026: each instance gets a hash-based subdomain routed by
             # Traefik to the container's web UI (ADR-011). M6: every request
             # passes the desktop-auth ForwardAuth middleware first, which

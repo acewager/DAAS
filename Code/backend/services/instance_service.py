@@ -14,6 +14,10 @@ class InstanceService:
         # VS-043: an optional retained volume id re-points the volume record
         # to the new instance so its data carries over.
         attach_volume_id = data.pop("attach_volume_id", None)
+        if attach_volume_id:
+            # Attaching retained storage implies persistence — otherwise the
+            # container would be created without the volume mounted.
+            data["persistent"] = True
         instance = DesktopInstance.objects.create(user=user, template=template, **data)
         instance.status = InstanceStatus.QUEUED
         instance.save(update_fields=["status", "updated_at"])

@@ -47,8 +47,9 @@ container, so **only packages available in Ubuntu's apt repositories work**.
 
 ## 2. Persistent storage: retain, delete, and re-attach
 
-Persistent desktops store `/home/user` in a dedicated Docker volume that
-survives restarts and desktop deletion.
+Persistent desktops store the desktop's home (the linuxserver webtop images
+keep the desktop user's files **and** session settings in `/config`) in a
+dedicated Docker volume that survives restarts and desktop deletion.
 
 ### When deleting a desktop
 
@@ -63,12 +64,14 @@ You'll be asked what to do with the data:
 Keeping data alone doesn't attach it to anything — you attach it **while
 creating the new desktop**:
 
-1. Make sure **Persistent storage** is ticked in the order form
+1. Make sure **Persistent storage** is ticked in the order form (it ticks
+   automatically when you pick retained data)
 2. An **"Attach retained data (optional)"** selector appears when you have
    retained volumes
 3. Pick the old desktop's storage (labelled with its name and the release
    date) — or leave it empty for fresh storage
-4. Create — the new desktop boots **with your old files** in `/home/user`
+4. Create — the new desktop boots **with your old files** in its home
+   (`/config` inside the desktop; the same place you saved them before)
 
 > **Notes**
 > - Retained storage lives on the server until it's attached to a new desktop
